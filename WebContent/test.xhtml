@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core">
+	<h:head>
+		<title>Doet t iets?!?</title>
+	</h:head>
+	<h:body>
+		#{klantView.getKlantString()}
+
+		<br />
+		
+		
+		Klant: #{klantManager.newKlant()}
+		<table>
+			<tr>
+				<td>
+					Klant: 
+				</td>
+				<td>
+					#{klantView.getName()}
+				</td>
+			</tr>
+			<tr>
+				<td>
+					klantView.printAdressen
+				</td>
+			</tr>
+			<tr>
+				<td>
+					#{klantView.printAdres(0)}--?>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					#{klantView.printAdres(1)}?>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					#{klantView.printAdres(2)}?>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Email:
+				</td>
+				<td>
+					#{klantView.getKlant().email}
+				</td> 
+			</tr>
+		</table>
+		<table>
+			<tr>
+				<td>
+					Alle Klanten: klantManager.fetchAll
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<!--#{klantManager.fetchAll()} --> Weetn we nou wel!! -->
+				</td>
+			</tr>
+		</table>
+	</h:body>
+</html>
