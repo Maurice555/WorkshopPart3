@@ -34,7 +34,7 @@ public class Klant implements java.io.Serializable {
 	private String achternaam;
 	
 	@NotNull
-	@Column(name="email")//, unique = true)
+	@Column(name="email", unique = true)
 	private String email;
 
 
@@ -43,14 +43,15 @@ public class Klant implements java.io.Serializable {
 //	@JoinColumn(name = "adresId", referencedColumnName = "id")
 //	@MapKeyColumn(name = "adresType")
 	
-	@ManyToMany(cascade=CascadeType.REFRESH)
+	@ManyToMany(cascade=CascadeType.MERGE)
 	@JoinTable(name="klantHasAdres", 
 			joinColumns=@JoinColumn(name="klantId"),
 			inverseJoinColumns=@JoinColumn(name="adresId"))
+	@MapKeyEnumerated(EnumType.STRING)
 	@MapKeyColumn(name = "adresType")
 	private Map<AdresType, Adres> adressen;
 
-	@OneToMany(mappedBy = "klant", cascade=CascadeType.REFRESH)
+	@OneToMany(mappedBy = "klant", fetch=FetchType.EAGER, cascade=CascadeType.MERGE)
 	private List<Bestelling> bestellingen;
 	
 	public Klant() {this(null);}
@@ -68,8 +69,8 @@ public class Klant implements java.io.Serializable {
 		this.tussenvoegsel = tussen;
 		this.achternaam = achter;
 		this.email = mail;
-		this.adressen = new HashMap();
-		this.bestellingen = new ArrayList();
+		this.adressen = new HashMap<AdresType, Adres>();
+		this.bestellingen = new ArrayList<Bestelling>();
 	}
 	
 	public long getId() {return this.id;}

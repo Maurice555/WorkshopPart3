@@ -1,14 +1,11 @@
 package com.workshop3.service;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
-import javax.ejb.EJB;
 import javax.enterprise.context.*;
 import javax.inject.*;
-import javax.transaction.Transactional;
 
-import com.workshop3.dao.DAO;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.workshop3.dao.mysql.*;
 import com.workshop3.model.Adres;
 import com.workshop3.model.Klant;
@@ -19,18 +16,17 @@ public class KlantService implements java.io.Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	//@EJB(name = "java:module/localKlantDAO")
-
 	@Inject
 	private KlantDAO klantDAO;
 	
 	@Inject
 	private AdresDAO adresDAO;
-	
+
 	private BestellingService bestelService;
 	
 	public KlantService() {}
 
+	
 	public KlantDAO getKlantDAO() {return this.klantDAO;}
 	
 	public void setKlantDAO(KlantDAO klantDAO) {this.klantDAO = klantDAO;}
@@ -52,22 +48,45 @@ public class KlantService implements java.io.Serializable {
 	public static boolean isValidEmail(String mail) {
 		return mail.matches("([(\\w)+\\.-]+)[\\w^_]+@[\\w-\\.]+[\\w^_]+(\\.([\\w^0-9_]){2,4}){1,2}");
 	}
-	
+/* 
+WErkt NieT;	
 	public boolean isKnownEmail(String mail) {
-		return this.klantDAO.get(mail.toLowerCase()).getId() != 0;
+		return this.klantDAO.get(mail.toLowerCase()) != null;
+	}
+*/	
+	
+	public void newBestellingUnknownKlant(long bestelID) {
+		//new KlantView();
+	}
+		
+	public long addOrUpdate(Klant k) {
+		String mail = k.getEmail().toLowerCase(); 
+		k.setEmail(mail);
+		
+		if (isValidEmail(mail)) {
+			if (k.getId() > 0) {
+				update(k, k.getId());
+				return k.getId();
+			}
+			
+			return add(k);
+		} 
+		return -1;
 	}
 	
+	public void update(Klant k, long id) {
+		get(id);
+		this.klantDAO.update(k);
+	}
+	
+	
 	public long add(Klant k) {
-		if (isValidEmail(k.getEmail())) {
-//			if (!isKnownEmail(k.getEmail())) {
-				this.klantDAO.save(k);
-//			} else {
-//				return 0;
-//			}
-		} else {
-			return -1;
+		try {
+			this.klantDAO.save(k);
+			return k.getId();
+		} catch (MySQLIntegrityConstraintViolationException ex) {
+			return -2;
 		}
-		return k.getId();
 	}
 	
 	public Klant get(long id) {
@@ -81,15 +100,10 @@ public class KlantService implements java.io.Serializable {
 		return null;
 	}
 	
-	public String getTable(){
-		StringBuilder everything = new StringBuilder();
-		for (Klant k : this.klantDAO.getAll()) {
-			everything.append(k.toString());
-		}
-		
-		return everything.toString();
+	public List<Klant> getTable(){
+		return this.klantDAO.getAll();
 	}
-	
+			
 	public Klant del(long id) {
 		Klant k = get(id);
 		this.klantDAO.delete(id);
@@ -97,7 +111,11 @@ public class KlantService implements java.io.Serializable {
 	}
 
 	public long add(Adres adres) {
-		this.adresDAO.save(adres);
+		try {
+			this.adresDAO.save(adres);
+		} catch (MySQLIntegrityConstraintViolationException ex) {
+			return -2;
+		}
 		return adres.getId();
 	}
 	
@@ -110,7 +128,8 @@ public class KlantService implements java.io.Serializable {
 	
 
 	public static long getSerialversionuid() {return serialVersionUID;}
-	
-	
+
+
+
 	
 }

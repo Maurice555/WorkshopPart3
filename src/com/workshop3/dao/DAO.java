@@ -8,6 +8,8 @@ import javax.inject.*;
 import javax.persistence.*;
 import javax.transaction.Transactional;
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+
 @Named
 @Transactional
 @Dependent
@@ -33,7 +35,7 @@ public abstract class DAO<E extends Serializable> implements Serializable {
 	public void setEntity(Class<E> entity) {this.entity = entity;}
 
 	
-	public void save(E e) {
+	public void save(E e) throws MySQLIntegrityConstraintViolationException {
 		this.em.persist(e);
 	}
 	

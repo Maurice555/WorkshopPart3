@@ -47,7 +47,10 @@ public class KlantView implements java.io.Serializable {
 	
 	public void addAdresToKlant(AdresType aType) {
 		this.klant.getAdressen().put(aType, this.adres);
-		this.service.add(this.klant);
+		Map<AdresType, Adres> adresList = this.klant.getAdressen();
+		if (adresList.containsKey(AdresType.AllesInEen) && adresList.size() == 1 ^ adresList.size() > 1) {
+			this.service.addOrUpdate(this.klant);
+		}
 	}
 	
 	public String getKlantString() {
@@ -63,14 +66,11 @@ public class KlantView implements java.io.Serializable {
 	public Adres printAdres(int type) {
 		switch (type) {
 			case 0: 
-				return this.klant.getAdressen()
-						.get(AdresType.AllesInEen);
+				return this.klant.getAdressen().get(AdresType.AllesInEen);
 			case 1:
-				return this.klant.getAdressen()
-						.get(AdresType.Bezorg);
+				return this.klant.getAdressen().get(AdresType.Bezorg);
 			case 2:
-				return this.klant.getAdressen()
-						.get(AdresType.Post);
+				return this.klant.getAdressen().get(AdresType.Post);
 			default:
 				return null;
 		}

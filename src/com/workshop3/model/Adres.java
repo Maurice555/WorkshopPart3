@@ -12,7 +12,9 @@ import com.workshop3.service.KlantService;
 @Named
 @SessionScoped
 @Entity
-@Table(name="Adres")
+@Table(name="Adres", uniqueConstraints = {
+		@UniqueConstraint(columnNames = {"postcode", "huisnummer", "toevoeging"}, 
+				name = "uniek_adres")})
 public class Adres implements java.io.Serializable {
 	
 	@Transient
@@ -45,7 +47,8 @@ public class Adres implements java.io.Serializable {
 	@ManyToMany(cascade=CascadeType.MERGE)
 	@JoinTable(name="klantHasAdres", 
 			joinColumns=@JoinColumn(name="adresId", referencedColumnName="id"),
-			inverseJoinColumns=@JoinColumn(name="klantId", referencedColumnName="id") )
+			inverseJoinColumns=@JoinColumn(name="klantId", referencedColumnName="id")
+	)
 	private List<Klant> bewoners;
 	
 	public Adres() {}
@@ -93,8 +96,8 @@ public class Adres implements java.io.Serializable {
 	
 	@Override
 	public String toString() {
-		return "Adresnummer " + this.id + "\n" + 
-				this.straatnaam + " " + this.huisnummer + getToevoeging() +
+		return "Adresnummer " + this.id + "\n " + 
+				this.straatnaam + " " + this.huisnummer + " " + this.toevoeging + "\n " + 
 				this.postcode + " " + this.woonplaats;
 	}
 

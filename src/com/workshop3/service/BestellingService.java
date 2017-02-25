@@ -10,8 +10,13 @@ import java.util.*;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.*;
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.workshop3.dao.mysql.*;
+import com.workshop3.manager.KlantManager;
 import com.workshop3.model.*;
+import com.workshop3.model.Bestelling.BestellingStatus;
+import com.workshop3.view.KlantView;
+import com.workshop3.view.VerkoopView;
 
 @Named
 @SessionScoped
@@ -24,6 +29,8 @@ public class BestellingService implements java.io.Serializable {
 	
 	@Inject
 	private ArtikelDAO artikelDAO;
+
+	private KlantService klantService;
 	
 	public BestellingService() {}
 	
@@ -35,15 +42,31 @@ public class BestellingService implements java.io.Serializable {
 	public ArtikelDAO getArtikelDAO() {return this.artikelDAO;}
 
 	public void setArtikelDAO(ArtikelDAO artikelDAO) {this.artikelDAO = artikelDAO;}
-
+	
+	public KlantService getKlantService() {return this.klantService;}
+	
+	@Inject
+	public void setKlantService(KlantService klantService) {this.klantService = klantService;}
 
 
 	public List<Artikel> getArtikelList() {
 		return this.artikelDAO.getAll();
 	}	
 	
+	public Bestelling get(long id) {
+		return this.bestelDAO.get(id);
+	}
+	
+	public Artikel getArtikel(long id) {
+		return this.artikelDAO.get(id);
+	}
+
 	public Map<Artikel, Integer> getArtikelListByBestelling(long id) {
-		return this.bestelDAO.get(id).getArtikelen();
+		return get(id).getArtikelen();
+	}
+	
+	public void statusUpdate(long id, BestellingStatus status) {
+		this.bestelDAO.statusUpdate(id, status);
 	}
 	
 	public List<Bestelling> getBestellingList() {
@@ -54,13 +77,32 @@ public class BestellingService implements java.io.Serializable {
 		return this.bestelDAO.get(id).getKlant();
 	}
 
-	public long add(Bestelling bestelling) {
-		this.bestelDAO.save(bestelling);
-		return bestelling.getId();
+	public long process(Bestelling bestelling) {
+		if (bestelling.getKlant() == null || bestelling.getKlant().getId() == 0) {
+			long id = add(bestelling);
+			getKlantService().newBestellingUnknownKlant(id);
+			return id;
+		}
+		return add(bestelling);
+			
 	}
 	
+	public long add(Bestelling bestelling) {
+		try {
+			this.bestelDAO.save(bestelling);
+			return bestelling.getId();
+		} catch (MySQLIntegrityConstraintViolationException e) {
+			return -2;
+		}
+		
+	}
+
 	public long add(Artikel artikel) {
-		this.artikelDAO.save(artikel);
+		try {
+			this.artikelDAO.save(artikel);
+		} catch (MySQLIntegrityConstraintViolationException ex) {
+			ex.getMessage();
+		}
 		return artikel.getId();
 	}
 	
@@ -68,7 +110,7 @@ public class BestellingService implements java.io.Serializable {
 		int amountSold = 0;
 		for (Bestelling b : bestellingen) {
 			for(Map.Entry<Artikel, Integer> entry : getArtikelListByBestelling(b.getId()).entrySet()) {
-				if (artikel.getId() == entry.getKey().getId()) {
+				if (artikel.equals(entry.getKey())) {
 					amountSold += entry.getValue();
 				}
 			}
@@ -78,15 +120,25 @@ public class BestellingService implements java.io.Serializable {
 	}
 	
 	public Set<Bestelling> bestellingPerPeriod(Period period) {
-		Set<Bestelling> bestellingen = new HashSet();
+		Set<Bestelling> bestellingen = new HashSet<Bestelling>();
 		
 		bestellingen.addAll(this.bestelDAO.getEm().createNativeQuery(
 				"select id from Bestelling where datum > " + LocalDate.now().minus(period)
-				.format(DateTimeFormatter.ISO_DATE), Bestelling.class)
+				.format(DateTimeFormatter.ISO_DATE), Bestelling.class)//ofPattern("yyyy-MM-dd HH:mm:ss.nnn")
 				.getResultList());
 		
 		return  bestellingen;
 	}
+
+
+	
+	
+
+	public static long getSerialversionuid() {return serialVersionUID;}
+	
+	
+	
+	
 }
 
-//ofPattern("yyyy-MM-dd HH:mm:ss.nnn")
+

@@ -12,8 +12,10 @@ import com.workshop3.model.Adres;
 import com.workshop3.model.Adres.AdresType;
 import com.workshop3.model.Artikel;
 import com.workshop3.model.Bestelling;
+import com.workshop3.model.Bestelling.BestellingStatus;
 import com.workshop3.model.Klant;
 import com.workshop3.view.KlantView;
+import com.workshop3.view.VerkoopView;
 import com.workshop3.service.BestellingService;
 import com.workshop3.service.KlantService;
 
@@ -25,12 +27,14 @@ public class KlantManager implements java.io.Serializable {
 	
 	private KlantView klantView;
 	
+	private VerkoopView verkoopView;
+
 	private KlantService klantService;
 	
+	private BestellingService bestelService;
+
 	@Inject
 	private ArtikelDAO artiDAO;
-	
-	private BestellingService bestelService;
 	
 	public KlantManager() {}
 	
@@ -52,41 +56,68 @@ public class KlantManager implements java.io.Serializable {
 	public void setBestelService(BestellingService bestelService) {this.bestelService = bestelService;}
 
 	
+	@Inject
+	public void setVerkoopView(VerkoopView verkoopView) {this.verkoopView = verkoopView;}
+
+
+
+	public VerkoopView getVerkoopView() {return this.verkoopView;}
+
 	
 	public String delivery(){
 		
 		//Testfase
 
-		Klant k = new Klant("Jerry", "Seinfeld", "seinfeld@appartment.com");
-		Adres b = new Adres("Herenweg", 555, "9713XX", "Groningen");
+//		Klant k = new Klant("Jimmy", "de", "Ville", "nijntje@koekiemonsterr.nl");
+//		Adres b = new Adres("HafenStrasse", 4, "9713OO", "Bodenfelde");
 		
 		
 		
-		//getKlantService().add(k);
-		getKlantService().add(b);
+		//getKlantService().add(Adres adres);
 		
-		k.getAdressen().put(AdresType.Bezorg, b);
+		Klant k = getKlantService().get("jurian@openindex.io");
+		//Adres a = getKlantService().getAdres(6);
 		
-		getKlantService().add(k);
-		Adres test = getKlantService().getAdres(1);
-		
-		getKlantView().setAdres(test);
-		
-		getKlantView().setKlant(getKlantService().get(21));
+//		k.getAdressen().put(AdresType.Post, b);
+
 		
 		
-		return "Nice to do business with you! @ " + getKlantView().getAdres().toString() + 
-				" for someone like " + getKlantView().getKlant().toString();// + " - - - " + createTable;
-	
+		
+		getKlantView().setKlant(k);
+		
+		getKlantView().setAdres(k.getAdressen().get(AdresType.AllesInEen));
+		
+		
+		Bestelling bestelling = new Bestelling(klant());
+		bestelling.addArtikel(this.artiDAO.get(5), 11);
+		bestelling.addArtikel(this.artiDAO.get(6), 5);
+		
+		bestelling.removeArtikel(this.artiDAO.get(5), 1);
+		
+		getVerkoopView().setBestelling(bestelling);
+		
+		
+		return "Nice to do business with you! @ " + 
+				getKlantView().getAdres().toString() + 
+				" - - - - for someone like " + 
+				klant().toString() + 
+				" - - With Order -- - - " + 
+				getVerkoopView().getBestelling();
+		
 	}
 	
 	
 	public String newKlant() {
 		
-		getKlantView().addAdresToKlant();
+		
+		//Call klantDAO.merge
+		//getKlantService().update(klant(), 21);
+		
+		//getKlantView().addAdresToKlant();
 		
 		
-		getKlantService().add(getKlantView().getKlant());
+		getKlantService().addOrUpdate(klant());
+		
 /*
 		Artikel arti = new Artikel("Warm Broodje", "met vlees en gesmolten kaas", new BigDecimal(3.95));
 		Artikel arti2 = new Artikel("Cappucino", "Met melkschuim en cacao", new BigDecimal(1.95));
@@ -98,37 +129,33 @@ public class KlantManager implements java.io.Serializable {
 		this.artiDAO.save(arti3);
 */		
 		
-		
-		Bestelling bestelling = new Bestelling();
-		bestelling
-				.getArtikelen()
-				.put(this.artiDAO
-				.get(5), 11);
-		bestelling.getArtikelen().put(this.artiDAO.get(6), 5);
-		
-		getKlantView().getKlant().getBestellingen().add(bestelling);
+		getBestelService().statusUpdate(44, BestellingStatus.Afgeleverd);
 		
 		Period p = Period.ofDays(4);
 		
 		
+		//Bestelling.klant not null please
 		
-		getBestelService().add(bestelling);
 		
-		return getKlantView().getKlantString() + 
-				" Tried to save : " + 
-				getKlantView().getKlant().getBestellingen().get(0) + 
+		return klant().getAdressen() + 
+				" - - - - Adressen en bestellingen: " + 
+				getKlantService().get("jurian@openindex.io").getBestellingen() + 
 				"- - - - - Amount Sold = " + 
-				getBestelService().artikelCount(getBestelService().getArtikelDAO().get(5), 
-						getBestelService().bestellingPerPeriod(p));
+				getBestelService().artikelCount(//Artikel artikel, Period p
+				getBestelService().getArtikelDAO().get(5), //artikel
+				getBestelService().bestellingPerPeriod(p)); //period
 
 	}
-	
-	public String fetchAll() {
-		return getKlantService().getTable();
+
+
+	private Klant klant() {
+		return getKlantView().getKlant();
 	}
-	
+
 	
 	public static long getSerialversionuid() {return serialVersionUID;}
-	
+
+
+
 	
 }

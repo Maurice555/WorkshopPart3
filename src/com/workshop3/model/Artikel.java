@@ -1,6 +1,7 @@
 package com.workshop3.model;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Named;
@@ -56,9 +57,22 @@ public class Artikel implements java.io.Serializable {
 	@Override
 	public String toString() {
 		return "Artikelnummer: " + getId() + " " + getNaam() + " " 
-				+ getOmschrijving() + " " + getPrijs();
+				+ getOmschrijving() + " " + NumberFormat.getCurrencyInstance().format(getPrijs());
 	}
 
+	@Override
+	public boolean equals(Object a) {
+		if (a instanceof Artikel) {
+			Artikel artikel = (Artikel) a;
+			return artikel.getId() == this.id;
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return (int)this.id;
+	}
 	
 	
 	public static long getSerialversionuid() {return serialVersionUID;}
