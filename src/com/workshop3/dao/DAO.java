@@ -1,6 +1,7 @@
 package com.workshop3.dao;
 
 import java.io.Serializable;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 
 import javax.enterprise.context.*;
@@ -35,7 +36,7 @@ public abstract class DAO<E extends Serializable> implements Serializable {
 	public void setEntity(Class<E> entity) {this.entity = entity;}
 
 	
-	public void save(E e) throws MySQLIntegrityConstraintViolationException {
+	public void save(E e) throws SQLIntegrityConstraintViolationException {
 		this.em.persist(e);
 	}
 	

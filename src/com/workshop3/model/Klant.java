@@ -5,7 +5,6 @@ import javax.inject.*;
 import javax.persistence.*;
 import javax.validation.constraints.*;
 
-import com.workshop3.model.Adres.AdresType;
 import com.workshop3.service.KlantService;
 
 import java.util.*;
@@ -13,7 +12,7 @@ import java.util.*;
 @Named
 @SessionScoped
 @Entity
-@Table(name="Klant")
+@Table(name = "Klant")
 public class Klant implements java.io.Serializable {
 	
 	@Transient
@@ -21,40 +20,39 @@ public class Klant implements java.io.Serializable {
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="id")
+	@Column(name = "id")
 	private long id;
 	
-	@Column(name="voornaam")
+	@Column(name = "voornaam")
 	private String voornaam;
 	
-	@Column(name="tussenvoegsel")
+	@Column(name = "tussenvoegsel")
 	private String tussenvoegsel;
 	
-	@Column(name="achternaam")
+	@Column(name = "achternaam")
 	private String achternaam;
 	
 	@NotNull
-	@Column(name="email", unique = true)
+	@Column(name = "email", unique = true)
 	private String email;
 
-
-//	@ElementCollection(fetch=FetchType.LAZY)
-//	@CollectionTable(name = "klantHasAdres", joinColumns=@JoinColumn(name = "klantId"))
-//	@JoinColumn(name = "adresId", referencedColumnName = "id")
-//	@MapKeyColumn(name = "adresType")
+	@ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@JoinColumn(name = "adresId")
+	private Adres adres;
 	
-	@ManyToMany(cascade=CascadeType.MERGE)
-	@JoinTable(name="klantHasAdres", 
-			joinColumns=@JoinColumn(name="klantId"),
-			inverseJoinColumns=@JoinColumn(name="adresId"))
-	@MapKeyEnumerated(EnumType.STRING)
-	@MapKeyColumn(name = "adresType")
-	private Map<AdresType, Adres> adressen;
+	@ManyToMany(cascade = CascadeType.MERGE)
+	@JoinTable(name = "bezorgAdres",
+			joinColumns = @JoinColumn(name = "klantId"),
+			inverseJoinColumns = @JoinColumn(name = "adresId"))
+	private Set<Adres> bezorgAdressen;
 
-	@OneToMany(mappedBy = "klant", fetch=FetchType.EAGER, cascade=CascadeType.MERGE)
-	private List<Bestelling> bestellingen;
+	@OneToMany(mappedBy = "klant", cascade = CascadeType.MERGE)
+	private Set<Account> accounts;
 	
-	public Klant() {this(null);}
+	@OneToMany(mappedBy = "klant", cascade = CascadeType.MERGE)
+	private Set<Bestelling> bestellingen;
+	
+	public Klant() {}
 	
 	public Klant(String mail){
 		this(null, null, mail);
@@ -65,12 +63,13 @@ public class Klant implements java.io.Serializable {
 	}
 	
 	public Klant(String voor, String tussen, String achter, String mail){
-		this.voornaam = voor;
+		setVoornaam(voor);
 		this.tussenvoegsel = tussen;
-		this.achternaam = achter;
-		this.email = mail;
-		this.adressen = new HashMap<AdresType, Adres>();
-		this.bestellingen = new ArrayList<Bestelling>();
+		setAchternaam(achter);
+		setEmail(mail);
+		this.adres = null;
+		this.bestellingen = new HashSet<Bestelling>();
+		this.accounts = new HashSet<Account>();
 	}
 	
 	public long getId() {return this.id;}
@@ -83,7 +82,7 @@ public class Klant implements java.io.Serializable {
 
 	public String getTussenvoegsel() {return this.tussenvoegsel != null ? this.tussenvoegsel + " " : "";}
 	
-	public void setTussenvoegsel(String tussenvoegsel) {this.tussenvoegsel = tussenvoegsel;}
+	public void setTussenvoegsel(String tussenvoegsel) {this.tussenvoegsel = tussenvoegsel.isEmpty() ? null : tussenvoegsel;}
 
 	public String getAchternaam() {return this.achternaam;}
 	
@@ -93,19 +92,35 @@ public class Klant implements java.io.Serializable {
 	
 	public void setEmail(String email) {this.email = email.toLowerCase();}
 	
-	public Map<AdresType, Adres> getAdressen() {
-		return this.adressen;
-	}
-	public void setAdressen(Map<AdresType, Adres> adressen) {
-		this.adressen = adressen;
-	}
+	public Adres getAdres() {return this.adres;}
+	
+	public void setAdres(Adres adres) {this.adres = adres;}
+	
+	public Set<Adres> getBezorgAdressen() {return this.bezorgAdressen;}
 
-	public List<Bestelling> getBestellingen() {
-		return this.bestellingen;
+	public void setBezorgAdressen(Set<Adres> bezorgAdressen) {this.bezorgAdressen = bezorgAdressen;}
+
+	public Set<Bestelling> getBestellingen() {return this.bestellingen;}
+	
+	public void setBestellingen(Set<Bestelling> bestellingen) {this.bestellingen = bestellingen;}
+
+	public Set<Account> getAccounts() {return this.accounts;}
+
+	public void setAccounts(Set<Account> accounts) {this.accounts = accounts;}
+	
+	
+	public boolean hasAccount() {
+		return this.accounts != null && !this.accounts.isEmpty();
 	}
-	public void setBestellingen(List<Bestelling> bestellingen) {
-		this.bestellingen = bestellingen;
+	
+	public boolean hasAdres() {
+		return this.adres != null;
 	}
+	
+	public boolean hasValidEmail() {
+		return KlantService.isValidEmail(this.email);
+	}
+		
 
 	@Override
 	public String toString(){
@@ -113,7 +128,9 @@ public class Klant implements java.io.Serializable {
 				this.voornaam + " " + getTussenvoegsel() + this.achternaam + "\n" + 
 				this.email;
 	}
-
+	
+	
+	
 	
 	public static long getSerialversionuid() {return serialVersionUID;}
 	

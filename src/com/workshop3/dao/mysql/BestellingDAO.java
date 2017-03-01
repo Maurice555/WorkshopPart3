@@ -1,5 +1,7 @@
 package com.workshop3.dao.mysql;
 
+import java.util.Date;
+
 import javax.enterprise.context.ConversationScoped;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
@@ -7,7 +9,6 @@ import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
 import com.workshop3.model.Bestelling;
-import com.workshop3.model.Bestelling.BestellingStatus;
 
 @Named
 @Transactional
@@ -21,8 +22,8 @@ public class BestellingDAO extends com.workshop3.dao.DAO<Bestelling> {
 	
 	public BestellingDAO() { super(Bestelling.class); }
 	
-	public void statusUpdate(long id, BestellingStatus status) {
-		get(id).setStatus(status);
+	public void statusUpdate(long id, int status) {
+		get(id).getStati().put(status, new Date());
 		this.em.merge(get(id));
 	}
 

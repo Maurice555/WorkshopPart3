@@ -8,7 +8,6 @@ import javax.inject.*;
 
 import com.workshop3.manager.KlantManager;
 import com.workshop3.model.*;
-import com.workshop3.model.Bestelling.BestellingStatus;
 import com.workshop3.service.BestellingService;
 
 @Named
@@ -20,6 +19,7 @@ public class VerkoopView implements java.io.Serializable {
 	@Inject
 	private Bestelling bestelling;
 	
+	@Inject
 	private BestellingService bestelService;
 
 	public VerkoopView() {}
@@ -27,7 +27,6 @@ public class VerkoopView implements java.io.Serializable {
 	
 	public BestellingService getBestelService() {return this.bestelService;}
 	
-	@Inject
 	public void setBestelService(BestellingService bestelService) {this.bestelService = bestelService;}
 	
 	public Bestelling getBestelling() {return this.bestelling;}
@@ -40,22 +39,19 @@ public class VerkoopView implements java.io.Serializable {
 	}
 
 	
-	public String checkOut() {
-		
+	public String checkOut() {	
 		//Testfase
 
-		long bestelID = getBestelService().process(this.bestelling);
-		if (bestelID < 1) {
-			if (bestelID == 0) {
-				return "meer artikelen nodig!?! Weer naar VerkoopView";
-			} else if (bestelID == -1) {
-				return "bestelling heeft nog geen klant! door naar KlantView";
-			}
-		}
+		this.bestelService.process(this.bestelling);
+			
+		//this.bestelling = new Bestelling();
 		
-		getBestelService().statusUpdate(14, BestellingStatus.Betaald);
+		this.bestelService.statusUpdate(2, 2);
+		//getBestelService().statusUpdate(8, 1);
 		
-		return " - - -- -  {{{" + getBestelService().getKlantByBestelling(70);
+		return "Tried to save: " + getBestelling() + " - -checkOut -- - " + 
+				this.bestelService.getBestelListByKlant(3) + " - - - - ";
+	
 	}
 	
 	

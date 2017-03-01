@@ -11,7 +11,6 @@ import javax.inject.*;
 
 import com.workshop3.exc.NoKnownAddressException;
 import com.workshop3.model.*;
-import com.workshop3.model.Adres.AdresType;
 import com.workshop3.service.KlantService;
 
 @Named
@@ -26,6 +25,8 @@ public class KlantView implements java.io.Serializable {
 	@Inject
 	private Adres adres;
 	
+	private Account account;
+	
 	@Inject
 	private KlantService service;
 	
@@ -34,23 +35,44 @@ public class KlantView implements java.io.Serializable {
 	
 	public Klant getKlant() {return this.klant;}
 	
-	public void setKlant(Klant klant) {this.klant = klant;}
+	public void setKlant(Klant klant) {this.klant = klant; this.adres = this.klant.getAdres();}
 	
 	public Adres getAdres() {return this.adres;}
 	
 	public void setAdres(Adres adres) {this.adres = adres;}
 
+	public Account getAccount() {return this.account;}
+
+	public void setAccount(Account account) {this.account = account; setKlant(this.account.getKlant());}
+
+	public KlantService getService() {return this.service;}
+	
+	public void setService(KlantService service) {this.service = service;}
+
 
 	public void addAdresToKlant() {
-		addAdresToKlant(AdresType.AllesInEen);
+		this.service.add(this.adres);
+		this.klant.setAdres(this.adres);
+	
+		this.service.addOrUpdate(this.klant);
 	}
 	
-	public void addAdresToKlant(AdresType aType) {
-		this.klant.getAdressen().put(aType, this.adres);
-		Map<AdresType, Adres> adresList = this.klant.getAdressen();
-		if (adresList.containsKey(AdresType.AllesInEen) && adresList.size() == 1 ^ adresList.size() > 1) {
-			this.service.addOrUpdate(this.klant);
-		}
+	public void addAccountToKlant() {
+		this.service.add(this.account);
+		this.klant.getAccounts().add(this.account);
+		
+		this.service.addOrUpdate(this.klant);
+	}
+	
+	public void addBezorgAdres() {
+		this.service.add(this.adres);
+		this.klant.getBezorgAdressen().add(this.adres);
+		
+		this.service.addOrUpdate(this.klant);
+	}
+	
+	public void updateAccount() {
+		this.service.update(this.account, this.account.getId());
 	}
 	
 	public String getKlantString() {
@@ -63,21 +85,25 @@ public class KlantView implements java.io.Serializable {
 		return getName() + "\n" + this.klant.getEmail();
 	}
 	
-	public Adres printAdres(int type) {
-		switch (type) {
-			case 0: 
-				return this.klant.getAdressen().get(AdresType.AllesInEen);
-			case 1:
-				return this.klant.getAdressen().get(AdresType.Bezorg);
-			case 2:
-				return this.klant.getAdressen().get(AdresType.Post);
-			default:
-				return null;
-		}
+	public String getName() {
+		return this.klant.getVoornaam() + " " + this.klant.getTussenvoegsel() + this.klant.getAchternaam(); 
 	}
 	
-	public String getName(){
-		return this.klant.getVoornaam() + " " + this.klant.getTussenvoegsel() + this.klant.getAchternaam(); 
+	public String printAdres(int row) {
+		if (row == 0) {
+			return this.klant.getAdres().toString();
+		}
+		return printBezorgAdres(row);			
+	}
+	
+	public String printBezorgAdres(int row) {
+		List<Adres> bezorgAdressen = new ArrayList<Adres>();
+		bezorgAdressen.addAll(this.klant.getBezorgAdressen());
+		try {
+			return bezorgAdressen.get(row - 1).toString();
+		} catch (IndexOutOfBoundsException e) {
+			return "_----___-----___--";
+		}
 	}
 	
 	public String getGreeting(){

@@ -22,34 +22,32 @@ public class Adres implements java.io.Serializable {
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="id")
+	@Column(name = "id")
 	private long id;
 	
-	@Column(name="straatnaam")
+	@Column(name = "straatnaam")
 	private String straatnaam;
 	
-	@Column(name="huisnummer")
+	@Column(name = "huisnummer")
 	private int huisnummer;
 	
-	@Column(name="toevoeging")
+	@Column(name = "toevoeging")
 	private String toevoeging;
 	
-	@Column(name="postcode")
+	@Column(name = "postcode")
 	private String postcode;
 	
-	@Column(name="woonplaats")
+	@Column(name = "woonplaats")
 	private String woonplaats;
 	
-	public enum AdresType {
-		AllesInEen, Bezorg, Post;
-	}
+	@OneToMany(mappedBy = "adres")	
+	private Set<Klant> bewoners;
 	
-	@ManyToMany(cascade=CascadeType.MERGE)
-	@JoinTable(name="klantHasAdres", 
-			joinColumns=@JoinColumn(name="adresId", referencedColumnName="id"),
-			inverseJoinColumns=@JoinColumn(name="klantId", referencedColumnName="id")
-	)
-	private List<Klant> bewoners;
+	@ManyToMany
+	@JoinTable(name = "bezorgAdres",
+			joinColumns = @JoinColumn(name = "adresId"),
+			inverseJoinColumns = @JoinColumn(name = "klantId"))
+	private Set<Klant> bezorgers;
 	
 	public Adres() {}
 	
@@ -58,11 +56,11 @@ public class Adres implements java.io.Serializable {
 	}
 	
 	public Adres(String straat, int nummer, String toevoeging, String postcode, String plaats) {
-		this.straatnaam = straat;
+		setStraatnaam(straat);
 		this.huisnummer = nummer;
 		this.toevoeging = toevoeging;
 		this.postcode = postcode;
-		this.woonplaats = plaats;
+		setWoonplaats(plaats);
 	}
 	
 	public long getId() {return this.id;}
@@ -89,11 +87,7 @@ public class Adres implements java.io.Serializable {
 	
 	public void setWoonplaats(String plaats) {this.woonplaats = KlantService.firstCapital(plaats);}
 		
-	public List<Klant> getBewoners() {return this.bewoners;}
-	
-	public void setBewoners(List<Klant> bewoners) {this.bewoners = bewoners;}
-
-	
+		
 	@Override
 	public String toString() {
 		return "Adresnummer " + this.id + "\n " + 

@@ -19,28 +19,27 @@ public class Bestelling implements java.io.Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private long id;
 	
-	@ManyToOne(cascade=CascadeType.MERGE)
+	@ManyToOne(cascade = CascadeType.MERGE)
 	@JoinColumn(name = "klantId", referencedColumnName = "id")
 	private Klant klant;
 	
 	@Column(name = "datum")
 	private Date datum;
 	
-	public enum BestellingStatus {
-		Onbetaald, Betaald, InBehandeling, Verzonden, Afgeleverd;
-	}
+	@ElementCollection
+	@CollectionTable(name = "bestellingHasStatus",
+			joinColumns = @JoinColumn(name = "bestellingId"))
+	@Column(name = "datum")
+	@MapKeyColumn(name = "status")
+	private Map<Integer, Date> stati;
 	
-	@Enumerated(EnumType.STRING)
-	@Column(name = "status")
-	private BestellingStatus status;
-	
-	@ElementCollection(fetch=FetchType.EAGER)
+	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(name = "bestellingHasArtikel",
-			joinColumns=@JoinColumn(name = "bestellingId"))
+			joinColumns = @JoinColumn(name = "bestellingId"))
 	@Column(name = "artikelAantal")
 	@MapKeyJoinColumn(name = "artikelId", referencedColumnName = "id")
 	private Map<Artikel, Integer> artikelen;
@@ -51,7 +50,7 @@ public class Bestelling implements java.io.Serializable {
 	
 	public Bestelling(Klant k) {
 		this.klant = k;
-		this.status = BestellingStatus.Onbetaald;
+		this.stati = new HashMap<Integer, Date>();
 		this.datum = new Date();
 		this.artikelen = new HashMap<Artikel, Integer>();
 	}
@@ -73,9 +72,9 @@ public class Bestelling implements java.io.Serializable {
 	
 	public void setArtikelen(Map<Artikel, Integer> artikelen) {this.artikelen = artikelen;}
 	
-	public BestellingStatus getStatus() {return this.status;}
+	public Map<Integer, Date> getStati() {return this.stati;}
 
-	public void setStatus(BestellingStatus status) {this.status = status;}
+	public void setStati(Map<Integer, Date> stati) {this.stati = stati;}
 	
 
 	public void addArtikel(Artikel artikel, int aantal) {
@@ -89,7 +88,11 @@ public class Bestelling implements java.io.Serializable {
 	public void removeArtikel(Artikel artikel, int aantal) {
 		if (this.artikelen.containsKey(artikel)) {
 			int newAantal = this.artikelen.get(artikel) - aantal;
-			this.artikelen.put(artikel, newAantal);
+			if (newAantal > 0) {
+				this.artikelen.put(artikel, newAantal);
+			} else {
+				this.artikelen.remove(artikel);
+			}
 		}
 	}
 	
@@ -107,10 +110,9 @@ public class Bestelling implements java.io.Serializable {
 	@Override
 	public String toString() {
 		return "Bestellingnummer#: " + getId() + " " + getArtikelen() + " " + 
-				NumberFormat.getCurrencyInstance().format(totaalPrijs()) + " " + getStatus().toString();
+				NumberFormat.getCurrencyInstance().format(totaalPrijs());
 	}
 
-	
 	
 	public static long getSerialversionuid() {return serialVersionUID;}
 	
