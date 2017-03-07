@@ -2,6 +2,7 @@ package com.workshop3.manager;
 
 import java.text.NumberFormat;
 import java.time.Period;
+import java.util.*;
 
 import javax.enterprise.context.*;
 import javax.inject.*;
@@ -60,24 +61,22 @@ public class KlantManager implements java.io.Serializable {
 		
 		//Testfase
 
-		//Klant k = new Klant("Pieperdosie", "Villalobos", "pieppp@pikachu.nl");
-		Adres b = new Adres("Schuitendiep", 101, "9712PS", "Groningen");
-		
-		
-		
-		//getKlantService().add(b);
-		
-		//getKlantService().add(k);
-		//Adres a = getKlantService().getAdres(3);
-		
-		//Klant k = getKlantService().get("blipps@pikachu.nl");
-		
 		getKlantView().setKlant(new Klant());
 		
-		getKlantView().setAdres(b);
+		
+//		Account acct = new Account(klant());
+//		acct.setLogin("Bugs");
+//		acct.setPass("bunny.com");
+//		
+//		getKlantView().setAccount(acct);
+		
+		getKlantService().login("Maurice555", "bugs101");
+		
+		getKlantView().setAdres(new Adres("Akerkhof", 22, "b", "9701PX", "Groningen"));
+		
 		
 		Bestelling bestelling = new Bestelling();
-		bestelling.addArtikel(this.artiDAO.get(4), 11);
+		bestelling.addArtikel(this.artiDAO.get(4), 7);
 		bestelling.addArtikel(this.artiDAO.get(6), 5);
 		
 		bestelling.removeArtikel(this.artiDAO.get(5), 1);
@@ -87,9 +86,9 @@ public class KlantManager implements java.io.Serializable {
 		
 		
 		return "Nice to do business with you! @ " + 
-				getKlantView().getAdres() + 
+				getKlantView().getAdres() + " " + // adresIDs.length +
 				" - - - - for someone like " + 
-				klant() + 
+				getKlantView().getAccount() + 
 				" - - With Order -- - - " +   
 				getVerkoopView().getBestelling();
 	}
@@ -97,43 +96,23 @@ public class KlantManager implements java.io.Serializable {
 	
 	public String newKlant() {
 		
-		getKlantView().addAdresToKlant();
+		getKlantView().addBezorgAdres();
 		
-		//Call klantDAO.merge
+		getKlantView().addAccountToKlant();
+		
 		//getKlantService().update(klant(), 21);
-		
-		//getKlantView().addAdresToKlant();
-		
-		//getBestelService().add(getVerkoopView().getBestelling());
-		
-/*
-		Artikel arti = new Artikel("Warm Broodje", "met vlees en gesmolten kaas", new BigDecimal(3.95));
-		Artikel arti2 = new Artikel("Cappucino", "Met melkschuim en cacao", new BigDecimal(1.95));
-		Artikel arti3 = new Artikel("Thee", "Alle soorten", new BigDecimal(1.20));
-		
-		
-		this.artiDAO.save(arti);
-		this.artiDAO.save(arti2);
-		this.artiDAO.save(arti3);
-*/		
 		
 		//getBestelService().statusUpdate(45, );
 		
 		Period p = Period.ofDays(4);
 		
 		
-		//Bestelling.klant not null please
-		
 		
 		return getVerkoopView().getBestelling() + "- - - - - Amount Earned = " + 
 				NumberFormat.getCurrencyInstance().format(getBestelService().turnover(p));
 	}
 	
-	public String fetchAll() {
-		return "Nakkes";
-	}
-
-
+	
 	private Klant klant() {
 		return getKlantView().getKlant();
 	}

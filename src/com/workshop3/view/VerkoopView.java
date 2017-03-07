@@ -46,11 +46,12 @@ public class VerkoopView implements java.io.Serializable {
 			
 		//this.bestelling = new Bestelling();
 		
-		this.bestelService.statusUpdate(2, 2);
-		//getBestelService().statusUpdate(8, 1);
+		this.bestelService.statusUpdate(8, 2);
+		this.bestelService.statusUpdate(15, 3);
+		this.bestelService.statusUpdate(58, 4);
 		
 		return "Tried to save: " + getBestelling() + " - -checkOut -- - " + 
-				this.bestelService.getBestelListByKlant(3) + " - - - - ";
+				this.bestelService.getBestelListByKlant(1) + " - - - - ";
 	
 	}
 	

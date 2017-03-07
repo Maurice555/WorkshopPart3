@@ -15,13 +15,13 @@ import com.workshop3.service.KlantService;
 @Table(name="Adres", uniqueConstraints = {
 		@UniqueConstraint(columnNames = {"postcode", "huisnummer", "toevoeging"}, 
 				name = "uniek_adres")})
-public class Adres implements java.io.Serializable {
+public class Adres extends EntityTemplate {
 	
 	@Transient
 	private static final long serialVersionUID = 2L;
 	
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private long id;
 	
@@ -58,13 +58,15 @@ public class Adres implements java.io.Serializable {
 	public Adres(String straat, int nummer, String toevoeging, String postcode, String plaats) {
 		setStraatnaam(straat);
 		this.huisnummer = nummer;
-		this.toevoeging = toevoeging;
-		this.postcode = postcode;
+		setToevoeging(toevoeging);
+		setPostcode(postcode);
 		setWoonplaats(plaats);
 	}
 	
+	@Override
 	public long getId() {return this.id;}
 	
+	@Override
 	public void setId(long id) {this.id = id;}
 	
 	public String getStraatnaam() {return this.straatnaam;}
@@ -77,11 +79,11 @@ public class Adres implements java.io.Serializable {
 	
 	public String getToevoeging() {return this.toevoeging == null ? "" : this.toevoeging;}
 	
-	public void setToevoeging(String toevoeging) {this.toevoeging = toevoeging;}
+	public void setToevoeging(String toevoeging) {this.toevoeging = toevoeging == null ? "" : toevoeging;}
 	
 	public String getPostcode() {return this.postcode;}
 	
-	public void setPostcode(String postcode) {this.postcode = postcode;}
+	public void setPostcode(String postcode) {this.postcode = postcode.toUpperCase();}
 	
 	public String getWoonplaats() {return this.woonplaats;}
 	
@@ -91,7 +93,7 @@ public class Adres implements java.io.Serializable {
 	@Override
 	public String toString() {
 		return "Adresnummer " + this.id + "\n " + 
-				this.straatnaam + " " + this.huisnummer + " " + this.toevoeging + "\n " + 
+				this.straatnaam + " " + this.huisnummer + getToevoeging() + "\n " + 
 				this.postcode + " " + this.woonplaats;
 	}
 

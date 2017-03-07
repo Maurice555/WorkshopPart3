@@ -11,7 +11,7 @@ import javax.persistence.*;
 @SessionScoped
 @Entity
 @Table(name = "Account")
-public class Account implements java.io.Serializable {
+public class Account extends EntityTemplate {
 
 	@Transient
 	private static final long serialVersionUID = 1L;

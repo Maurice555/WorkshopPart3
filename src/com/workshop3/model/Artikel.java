@@ -11,7 +11,7 @@ import javax.persistence.*;
 @SessionScoped
 @Entity
 @Table(name = "Artikel")
-public class Artikel implements java.io.Serializable {
+public class Artikel extends EntityTemplate {
 	
 	@Transient
 	private static final long serialVersionUID = 1L;
@@ -38,8 +38,10 @@ public class Artikel implements java.io.Serializable {
 		this.prijs = prijs;
 	}
 	
+	@Override
 	public long getId() {return this.id;}
 
+	@Override
 	public void setId(long id) {this.id = id;}
 
 	public String getNaam() {return this.naam;}

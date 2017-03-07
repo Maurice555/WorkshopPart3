@@ -1,23 +1,19 @@
 package com.workshop3.service;
 
 import java.sql.SQLIntegrityConstraintViolationException;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import javax.enterprise.context.*;
 import javax.inject.*;
-import javax.transaction.Transactional;
+import javax.transaction.*;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.workshop3.dao.mysql.*;
-import com.workshop3.model.Account;
-import com.workshop3.model.Adres;
-import com.workshop3.model.Klant;
+import com.workshop3.model.*;
 import com.workshop3.view.KlantView;
 
 @Named
 @SessionScoped
-public class KlantService implements java.io.Serializable {
+public class KlantService extends AbstractEntityService<Klant> {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -34,16 +30,12 @@ public class KlantService implements java.io.Serializable {
 	
 	private KlantView klantView;
 
-	public KlantService() {}
+	private static final String mailReedsInGebruik = "Dit e-mailadres is reeds in gebruik";
 
-	
-	public KlantDAO getKlantDAO() {return this.klantDAO;}
-	
-	public void setKlantDAO(KlantDAO klantDAO) {this.klantDAO = klantDAO;}
+	private static final int duplicateKey = 1062;
 
-	public AdresDAO getAdresDAO() {return this.adresDAO;}
+	public KlantService() { super(new KlantDAO()); }
 
-	public void setAdresDAO(AdresDAO adresDAO) {this.adresDAO = adresDAO;}
 	
 	public BestellingService getBestelService() {return this.bestelService;}
 	
@@ -63,13 +55,11 @@ public class KlantService implements java.io.Serializable {
 	public static boolean isValidEmail(String mail) {
 		return mail.matches("([(\\w)+\\.-]+)[\\w^_]+@[\\w-\\.]+[\\w^_]+(\\.([\\w^0-9_]){2,4}){1,2}");
 	}
-/* 
-WErkt NieT;	
+/* Werkt niet
 	public boolean isKnownEmail(String mail) {
-		return this.klantDAO.get(mail.toLowerCase()) != null;
+		return this.klantDAO.getEm().contains(this.klantDAO.get(mail));
 	}
 */	
-	
 	public Klant klant() {
 		return getKlantView().getKlant();
 	}
@@ -88,53 +78,50 @@ WErkt NieT;
 		return -1;
 	}
 	
-	public void addBestellingToNewKlant(long bestelID) {
+	public void addBestellingToNewKlant(long bestelID) { // OF hier gewoon een Bestelling afleveren
 		getKlantView().setKlant(new Klant());
 		klant().getBestellingen().add(getBestelService().get(bestelID));
 	}
-
-	public void update(Klant k, long id) {
-		get(id);
-		this.klantDAO.update(k);
-	}
-	
-	public long add(Klant k) {
-		try {
-			this.klantDAO.save(k);
-			return k.getId();
-		} catch (SQLIntegrityConstraintViolationException ex) {
-			return k.getId();
-		}
-	}
-	
-	public Klant get(long id) {
-		return this.klantDAO.get(id);
-	}
-	
 	public Klant get(String mail) {
-		if (isValidEmail(mail))
+		if (isValidEmail(mail)) {
 			return this.klantDAO.get(mail.toLowerCase());
-		
+		}
 		return null;
-	}
-	
-	public List<Klant> getTable(){
-		return this.klantDAO.getAll();
-	}
-			
-	public Klant del(long id) {
-		Klant k = get(id);
-		this.klantDAO.delete(id);
-		return k;
 	}
 
 	public long add(Adres adres) {
 		try {
 			this.adresDAO.save(adres);
 			return adres.getId();
-		} catch (SQLIntegrityConstraintViolationException ex) {
-			return adres.getId();
+/*
+		} catch (SQLIntegrityConstraintViolationException e) {
+			if (e.getErrorCode() == duplicateKey) {
+				return 9;
+			}
+/*Anders zo... werkt ook niet
+
+		} catch (ServletException se) { // Uncatchable due to serverbug: https://java.net/jira/si/jira.issueviews:issue-html/GLASSFISH-21172/GLASSFISH-21172.html
+			if (se..getRootCause() instanceof DatabaseException) { https://java.net/jira/browse/GLASSFISH-21172
+				DatabaseException de = (DatabaseException) se.getRootCause();
+				if (de.getDatabaseErrorCode() == duplicateKey) {
+					return 24; // testing 124
+				} else if (de.getInternalException() instanceof MySQLIntegrityConstraintViolationException) {
+					return 21;
+				}
+			}
+
+		} catch (RollbackException re) { // Kan ook al niet
+			re.getCause(); // ServerBug	
+*/	
+		} catch (TransactionalException te) { // Is wat we catchen
+			if (te.getCause() instanceof RollbackException) { 
+				// Aanname is hier dat het om de Constraint is gegaan...
+				return this.adresDAO.findByPostcodeAndHuisnummer
+						(adres.getPostcode(), adres.getHuisnummer(), adres.getToevoeging())
+						.getId();
+			}
 		}
+		return 0;
 	}
 	
 	public Adres getAdres(long adresId) {
@@ -145,10 +132,14 @@ WErkt NieT;
 		return this.klantDAO.get(id).getAccounts();
 	}
 	
-	public Account login(String login) {
-		return this.accountDAO.get(login);
+	public Account login(String login, String pass) {
+		if (this.accountDAO.get(login).getPass().equals(pass)) {
+			Account act = this.accountDAO.get(login);
+			getKlantView().setAccount(act);
+			return act;
+		}
+		return getAccount(-1);
 	}
-	
 	
 	public Account getAccount(long accountID) {
 		return this.accountDAO.get(accountID);
@@ -158,18 +149,22 @@ WErkt NieT;
 		try {
 			this.accountDAO.save(account);
 			return account.getId();
-		} catch (SQLIntegrityConstraintViolationException e) {
-			return account.getId();
+		} catch (TransactionalException te) {
+			return rollbackCheck(te);
 		}
 	}
 	
 	public void update(Account account, long id) {
 		getAccount(id);
-		this.accountDAO.update(account);
+		try {
+			this.accountDAO.update(account);
+		} catch (TransactionalException e) {
+			rollbackCheck(e);
+		}
 	}
 
 
-
+	
 	
 	public static long getSerialversionuid() {return serialVersionUID;}
 

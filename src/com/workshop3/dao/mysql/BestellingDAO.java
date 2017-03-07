@@ -8,12 +8,13 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
+import com.workshop3.dao.DAOIface;
 import com.workshop3.model.Bestelling;
 
 @Named
 @Transactional
 @ConversationScoped
-public class BestellingDAO extends com.workshop3.dao.DAO<Bestelling> {
+public class BestellingDAO extends DAO<Bestelling> implements DAOIface<Bestelling>{
 
 	private static final long serialVersionUID = 1L;
 	

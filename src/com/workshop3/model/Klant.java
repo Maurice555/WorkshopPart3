@@ -13,7 +13,7 @@ import java.util.*;
 @SessionScoped
 @Entity
 @Table(name = "Klant")
-public class Klant implements java.io.Serializable {
+public class Klant extends EntityTemplate {
 	
 	@Transient
 	private static final long serialVersionUID = 1L;
@@ -36,7 +36,7 @@ public class Klant implements java.io.Serializable {
 	@Column(name = "email", unique = true)
 	private String email;
 
-	@ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@ManyToOne(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "adresId")
 	private Adres adres;
 	
@@ -72,8 +72,10 @@ public class Klant implements java.io.Serializable {
 		this.accounts = new HashSet<Account>();
 	}
 	
+	@Override
 	public long getId() {return this.id;}
 	
+	@Override
 	public void setId(long id) {this.id = id;}
 
 	public String getVoornaam() {return this.voornaam;}
@@ -82,7 +84,7 @@ public class Klant implements java.io.Serializable {
 
 	public String getTussenvoegsel() {return this.tussenvoegsel != null ? this.tussenvoegsel + " " : "";}
 	
-	public void setTussenvoegsel(String tussenvoegsel) {this.tussenvoegsel = tussenvoegsel.isEmpty() ? null : tussenvoegsel;}
+	public void setTussenvoegsel(String tussenvoegsel) {this.tussenvoegsel = tussenvoegsel;}
 
 	public String getAchternaam() {return this.achternaam;}
 	

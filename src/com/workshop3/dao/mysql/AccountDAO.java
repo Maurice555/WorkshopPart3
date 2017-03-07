@@ -10,7 +10,7 @@ import com.workshop3.model.Account;
 @Named
 @Transactional
 @ConversationScoped
-public class AccountDAO extends com.workshop3.dao.DAO<Account>{
+public class AccountDAO extends DAO<Account>{
 	
 	private static final long serialVersionUID = 1L;
 	

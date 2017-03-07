@@ -16,7 +16,7 @@ import com.workshop3.service.KlantService;
 @Named
 @Transactional
 @ConversationScoped
-public class KlantDAO extends com.workshop3.dao.DAO<Klant> {
+public class KlantDAO extends DAO<Klant> implements com.workshop3.dao.DAOIface<Klant>{
 
 	private static final long serialVersionUID = 112L;
 	
@@ -28,13 +28,13 @@ public class KlantDAO extends com.workshop3.dao.DAO<Klant> {
 	
 	public Klant get(String mail) {
 		return (Klant) this.em.createNativeQuery(
-				"select * from Klant where email = '" + mail + "'", Klant.class)
+				"select * from Klant where email = '" + mail.toLowerCase() + "'", Klant.class)
 				.getSingleResult();
 	}
 	
 	public List<Klant> getByAchternaam(String achter) {
 		return this.em.createNativeQuery(
-				"select * from Klant where achternaam = '" + achter + "'", Klant.class)
+				"select * from Klant where achternaam = '" + KlantService.firstCapital(achter) + "'", Klant.class)
 				.getResultList();
 	}
 	

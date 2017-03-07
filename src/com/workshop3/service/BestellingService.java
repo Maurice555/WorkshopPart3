@@ -2,22 +2,19 @@ package com.workshop3.service;
 
 import java.math.BigDecimal;
 import java.sql.SQLIntegrityConstraintViolationException;
-import java.time.LocalDate;
-import java.time.Period;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import javax.enterprise.context.SessionScoped;
 import javax.inject.*;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.workshop3.dao.mysql.*;
 import com.workshop3.model.*;
-import com.workshop3.view.KlantView;
 
 @Named
 @SessionScoped
-public class BestellingService implements java.io.Serializable {
+public class BestellingService extends AbstractEntityService<Bestelling> { // implements java.io.Serializable {
 	
 	private static final long serialVersionUID = 1L;
 
@@ -29,16 +26,8 @@ public class BestellingService implements java.io.Serializable {
 	
 	private KlantService service;
 
-	public BestellingService() {}
+	public BestellingService() { super(new BestellingDAO()); }
 	
-	
-	public BestellingDAO getBestelDAO() {return this.bestelDAO;}
-
-	public void setBestelDAO(BestellingDAO bestelDAO) {this.bestelDAO = bestelDAO;}
-
-	public ArtikelDAO getArtikelDAO() {return this.artikelDAO;}
-
-	public void setArtikelDAO(ArtikelDAO artikelDAO) {this.artikelDAO = artikelDAO;}
 	
 	public KlantService getKlantService() {return this.service;}
 	
@@ -62,11 +51,7 @@ public class BestellingService implements java.io.Serializable {
 	public List<Artikel> getArtikelList() {
 		return this.artikelDAO.getAll();
 	}	
-	
-	public Bestelling get(long id) {
-		return this.bestelDAO.get(id);
-	}
-	
+
 	public Artikel getArtikel(long id) {
 		return this.artikelDAO.get(id);
 	}
@@ -117,7 +102,7 @@ public class BestellingService implements java.io.Serializable {
 	
 	public Set<Bestelling> getBestellingList() {
 		Set<Bestelling> bestellingen = new HashSet<Bestelling>();
-		bestellingen.addAll(this.bestelDAO.getAll());
+		bestellingen.addAll(fetch());
 		return bestellingen;
 	}
 	
@@ -125,27 +110,12 @@ public class BestellingService implements java.io.Serializable {
 		return this.bestelDAO.get(id).getKlant();
 	}
 
-	public long add(Bestelling bestelling) {
-		try {
-			this.bestelDAO.save(bestelling);
-			return bestelling.getId();
-		} catch (SQLIntegrityConstraintViolationException e) {
-			return -2;
-		}
-		
-	}
-
 	public long add(Artikel artikel) {
-		try {
-			this.artikelDAO.save(artikel);
-			return artikel.getId();
-		} catch (SQLIntegrityConstraintViolationException ex) {
-			return -2;
-		}
-		
+		this.artikelDAO.save(artikel);
+		return artikel.getId();
 	}
 	
-	public int artikelCount(Artikel artikel, Set<Bestelling> bestellingen) {
+	public static int artikelCount(Artikel artikel, Set<Bestelling> bestellingen) {
 		int amountSold = 0;
 		for (Bestelling b : bestellingen) {
 			for(Map.Entry<Artikel, Integer> entry : b.getArtikelen().entrySet()) {
@@ -195,4 +165,15 @@ public class BestellingService implements java.io.Serializable {
 	
 	
 }
+/*
+	Artikel arti = new Artikel("Warm Broodje", "met vlees en gesmolten kaas", new BigDecimal(3.95));
+	Artikel arti2 = new Artikel("Cappucino", "Met melkschuim en cacao", new BigDecimal(1.95));
+	Artikel arti3 = new Artikel("Thee", "Alle soorten", new BigDecimal(1.20));
+	
+	
+	this.artikelDAO.save(arti);
+	this.artikelDAO.save(arti2);
+	this.artikelDAO.save(arti3);
+*/		
+
 

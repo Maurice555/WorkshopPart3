@@ -10,7 +10,7 @@ import com.workshop3.model.Artikel;
 @Named
 @Transactional
 @ConversationScoped
-public class ArtikelDAO extends com.workshop3.dao.DAO<Artikel> {
+public class ArtikelDAO extends DAO<Artikel> {
 
 	private static final long serialVersionUID = 1L;
 	

@@ -1,15 +1,11 @@
 package com.workshop3.view;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import javax.enterprise.context.*;
 import javax.faces.bean.ManagedBean;
 import javax.inject.*;
 
-import com.workshop3.exc.NoKnownAddressException;
 import com.workshop3.model.*;
 import com.workshop3.service.KlantService;
 
@@ -51,24 +47,22 @@ public class KlantView implements java.io.Serializable {
 
 
 	public void addAdresToKlant() {
-		this.service.add(this.adres);
-		this.klant.setAdres(this.adres);
-	
-		this.service.addOrUpdate(this.klant);
+		this.klant.setAdres(this.service.getAdres(this.service.add(this.adres)));
+		updateKlant();
 	}
 	
 	public void addAccountToKlant() {
-		this.service.add(this.account);
-		this.klant.getAccounts().add(this.account);
-		
-		this.service.addOrUpdate(this.klant);
+		this.klant.getAccounts().add(this.service.getAccount(this.service.add(this.account)));
+		updateKlant();
 	}
 	
 	public void addBezorgAdres() {
-		this.service.add(this.adres);
-		this.klant.getBezorgAdressen().add(this.adres);
-		
-		this.service.addOrUpdate(this.klant);
+		this.klant.getBezorgAdressen().add(this.service.getAdres(this.service.add(this.adres)));
+		updateKlant();
+	}
+
+	public long updateKlant() {
+		return this.service.addOrUpdate(this.klant);
 	}
 	
 	public void updateAccount() {
