@@ -8,7 +8,6 @@ import javax.enterprise.context.*;
 import javax.inject.*;
 import javax.faces.bean.ManagedBean;
 
-import com.workshop3.dao.mysql.ArtikelDAO;
 import com.workshop3.model.*;
 import com.workshop3.view.KlantView;
 import com.workshop3.view.VerkoopView;
@@ -29,12 +28,8 @@ public class KlantManager implements java.io.Serializable {
 	
 	private BestellingService bestelService;
 
-	@Inject
-	private ArtikelDAO artiDAO;
-	
 	public KlantManager() {}
-	
-	
+		
 	
 	public KlantView getKlantView() {return this.klantView;}
 
@@ -65,28 +60,29 @@ public class KlantManager implements java.io.Serializable {
 		
 		
 //		Account acct = new Account(klant());
-//		acct.setLogin("Bugs");
-//		acct.setPass("bunny.com");
-//		
-//		getKlantView().setAccount(acct);
+//		acct.setLogin("Abstract");
+//		acct.setPass("Dually");
+//		//acct.setKlant(getKlantService().get(""));
 		
-		getKlantService().login("Maurice555", "bugs101");
+		//getKlantView().setAccount(acct);
 		
-		getKlantView().setAdres(new Adres("Akerkhof", 22, "b", "9701PX", "Groningen"));
+		getKlantService().login("Abstract", "XXXXX");
+		
+		getKlantView().setAdres(getKlantService().getAdres("9955PP", 2, "b"));
 		
 		
 		Bestelling bestelling = new Bestelling();
-		bestelling.addArtikel(this.artiDAO.get(4), 7);
-		bestelling.addArtikel(this.artiDAO.get(6), 5);
+		bestelling.addArtikel(getBestelService().getSimple(4), 7);
+		bestelling.addArtikel(getBestelService().getSimple(6), 5);
 		
-		bestelling.removeArtikel(this.artiDAO.get(5), 1);
+		bestelling.removeArtikel(getBestelService().getSimple(5), 1);
 		
 		getVerkoopView().setBestelling(bestelling);
 		
 		
 		
 		return "Nice to do business with you! @ " + 
-				getKlantView().getAdres() + " " + // adresIDs.length +
+				getKlantView().getAdres() + " " +
 				" - - - - for someone like " + 
 				getKlantView().getAccount() + 
 				" - - With Order -- - - " +   
@@ -96,20 +92,21 @@ public class KlantManager implements java.io.Serializable {
 	
 	public String newKlant() {
 		
-		getKlantView().addBezorgAdres();
+		getKlantView().addAdresToKlant();
 		
-		getKlantView().addAccountToKlant();
+		//getKlantView().addAccountToKlant();
 		
-		//getKlantService().update(klant(), 21);
+		//getKlantService().updateSimple(getKlantView().getAccount(), 5);
 		
-		//getBestelService().statusUpdate(45, );
+		getBestelService().statusUpdate(150, 4);
 		
 		Period p = Period.ofDays(4);
 		
 		
 		
-		return getVerkoopView().getBestelling() + "- - - - - Amount Earned = " + 
-				NumberFormat.getCurrencyInstance().format(getBestelService().turnover(p));
+		return getKlantService().getKlantByAdres(getKlantView().getAdres())+ "- - - - - Amount Earned = " + 
+				getBestelService().statusProgress(p, 0, 1) + 
+				"-- -- - Account - -- -" + getKlantView().getAccount();
 	}
 	
 	

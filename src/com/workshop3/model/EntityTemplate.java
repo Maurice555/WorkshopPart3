@@ -1,9 +1,7 @@
 package com.workshop3.model;
 
 import javax.enterprise.context.*;
-import javax.inject.Named;
 
-@Named
 @SessionScoped
 public abstract class EntityTemplate implements java.io.Serializable {
 	
@@ -13,6 +11,10 @@ public abstract class EntityTemplate implements java.io.Serializable {
 
 	public long getId() {return this.id;}
 
-	public void setId(long id) {this.id = id;}
+	public void setId(long entityID) {this.id = entityID;}
+	
+	public String[] uniqueValue() {
+		return new String[] {getId() +""};
+	}
 	
 }

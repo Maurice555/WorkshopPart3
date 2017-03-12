@@ -1,45 +1,43 @@
 package com.workshop3.service;
 
 import java.math.BigDecimal;
-import java.sql.SQLIntegrityConstraintViolationException;
+import java.text.NumberFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import javax.enterprise.context.SessionScoped;
-import javax.inject.*;
+import javax.inject.Inject;
 
 import com.workshop3.dao.mysql.*;
 import com.workshop3.model.*;
 
-@Named
 @SessionScoped
-public class BestellingService extends AbstractEntityService<Bestelling> { // implements java.io.Serializable {
+public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 	
 	private static final long serialVersionUID = 1L;
-
+	
 	@Inject
 	private BestellingDAO bestelDAO;
 	
-	@Inject
-	private ArtikelDAO artikelDAO;
-	
-	private KlantService service;
+	private KlantService klantService;
 
-	public BestellingService() { super(new BestellingDAO()); }
+	private static final int maxNumOfStati = 7;
+
+	public BestellingService() { super(new BestellingDAO(), new ArtikelDAO()); }
 	
 	
-	public KlantService getKlantService() {return this.service;}
+	public KlantService getKlantService() {return this.klantService;}
 	
 	@Inject
-	public void setKlantService(KlantService service) {this.service = service;}
+	public void setKlantService(KlantService service) {this.klantService = service;}
 	
 
 	public long process(Bestelling bestelling) {
-		if (bestelling.getKlant() != null && bestelling.getKlant().getId() != 0) { // Klant is set
+		if (bestelling.getKlant() != null && bestelling.getKlant().getId() > 0) { // Klant is set
 			return add(bestelling);
 		} 
-		if (getKlantService().klant().getId() != 0) { // Saved Klant in KlantView
+		if (getKlantService().klant() != null && getKlantService().klant().getId() > 0) { // Saved Klant in KlantView
 			bestelling.setKlant(getKlantService().klant());
 			return add(bestelling);
 		}
@@ -48,14 +46,6 @@ public class BestellingService extends AbstractEntityService<Bestelling> { // im
 		return id;		
 	}
 	
-	public List<Artikel> getArtikelList() {
-		return this.artikelDAO.getAll();
-	}	
-
-	public Artikel getArtikel(long id) {
-		return this.artikelDAO.get(id);
-	}
-
 	public void statusUpdate(long id, int status) {
 		this.bestelDAO.statusUpdate(id, status);
 	}
@@ -64,7 +54,7 @@ public class BestellingService extends AbstractEntityService<Bestelling> { // im
 		Date currentDate = new Date(0);
 		int status = 0;
 		for (Map.Entry<Integer, Date> entry : get(id).getStati().entrySet()) {
-			if (currentDate.compareTo(entry.getValue()) < 0) {
+			if (currentDate.compareTo(entry.getValue()) < 0) { // Find latest
 				currentDate = entry.getValue();
 				status = entry.getKey();
 			}
@@ -92,29 +82,19 @@ public class BestellingService extends AbstractEntityService<Bestelling> { // im
 	}
 	
 	public Set<Bestelling> getBestelListByKlant(long klantID) {
-		Set<Bestelling> bestellijst = new HashSet<Bestelling>();
-		bestellijst.addAll(this.bestelDAO.getEm().createNativeQuery(
+		return new HashSet<Bestelling>(this.bestelDAO.getEm().createNativeQuery(
 				"select * from Bestelling where klantId = " + klantID, Bestelling.class)
 				.getResultList());
-				
-		return bestellijst;
 	}
 	
 	public Set<Bestelling> getBestellingList() {
-		Set<Bestelling> bestellingen = new HashSet<Bestelling>();
-		bestellingen.addAll(fetch());
-		return bestellingen;
+		return new HashSet<Bestelling>(fetch());
 	}
 	
-	public Klant getKlantByBestelling(long id) {
-		return this.bestelDAO.get(id).getKlant();
+	public long getKlantByBestelling(long id) {
+		return get(id).getKlant().getId();
 	}
-
-	public long add(Artikel artikel) {
-		this.artikelDAO.save(artikel);
-		return artikel.getId();
-	}
-	
+		
 	public static int artikelCount(Artikel artikel, Set<Bestelling> bestellingen) {
 		int amountSold = 0;
 		for (Bestelling b : bestellingen) {
@@ -124,56 +104,67 @@ public class BestellingService extends AbstractEntityService<Bestelling> { // im
 				}
 			}
 		}
-		
 		return amountSold;
 	}
 	
-	public BigDecimal turnover(Period p) {
+	public static BigDecimal salesWorth(Set<Bestelling> bestellingen) {
 		BigDecimal turnover = new BigDecimal(0.0);
-		for (Bestelling b : bestellingPerPeriod(p)) {
-			if (getStatus(b.getId()) > 0) {
-				
-				for (Map.Entry<Artikel, Integer> entry : b.getArtikelen().entrySet()) {
-					BigDecimal artikelTimesAantal = entry.getKey().getPrijs()
-							.multiply(new BigDecimal(entry.getValue()));
-					turnover = turnover.add(artikelTimesAantal);
-				}
+		for (Bestelling b : bestellingen) {
+			for (Map.Entry<Artikel, Integer> entry : b.getArtikelen().entrySet()) {
+				BigDecimal artikelTimesAantal = entry.getKey().getPrijs()
+						.multiply(new BigDecimal(entry.getValue()));
+				turnover = turnover.add(artikelTimesAantal);
 			}
+			bestellingen.remove(b);
 		}
 		return turnover;
+	}
+	
+	public String statusProgress(Period p, int begin, int change) {
+		Set<Bestelling> bestellingen = bestellingPerStatus(p, begin);
+		int som = 0;
+		double totaalVerandering = 0.0; 
+		int progress = 0;
+		for (Bestelling b : bestellingen) {
+			for (int i = begin; i < maxNumOfStati; i++) {
+				if (b.getStati().containsKey(i + change)) {
+					progress = i + change;
+				}
+			}
+			som++; totaalVerandering += progress; progress = 0;
+		}
+		double avgProg = totaalVerandering / som;
+		return "Aantal bestellingen met statusverandering = " + som + " waarde van de statusveranderingen = " + 
+				NumberFormat.getIntegerInstance().format(totaalVerandering) +	" gemiddelde progressie = " + 
+				avgProg;
+	}
+	
+	public Set<Bestelling> bestellingPerStatus(Period p, int minStatus) {
+		return new HashSet<Bestelling>(this.bestelDAO.getEm().createNativeQuery(
+				"select * from Bestelling inner join bestellingHasStatus on bestellingHasStatus.datum > '" + 
+				LocalDate.now().minus(p).format(DateTimeFormatter.ISO_DATE)	+ 
+				"' and bestellingHasStatus.status > " + minStatus + 
+				" and Bestelling.id = bestellingHasStatus.bestellingId", Bestelling.class)
+				.getResultList());
 	}
 	
 	public Set<Bestelling> bestellingPerPeriod(Period period) {
 		Set<Bestelling> bestellingen = new HashSet<Bestelling>();
 		bestellingen.addAll(this.bestelDAO.getEm().createNativeQuery(
-				"select id from Bestelling where datum > " + LocalDate.now().minus(period)
-				.format(DateTimeFormatter.ISO_DATE), Bestelling.class)//ofPattern("yyyy-MM-dd HH:mm:ss.nnn")
+				"select * from Bestelling where datum > '" + LocalDate.now().minus(period)
+				.format(DateTimeFormatter.ISO_DATE) + "'", Bestelling.class)//ofPattern("yyyy-MM-dd HH:mm:ss")
 				.getResultList());
 		
 		return  bestellingen;
 	}
 
-
+	
 	
 	
 
 	public static long getSerialversionuid() {return serialVersionUID;}
 
-
-	
 	
 	
 	
 }
-/*
-	Artikel arti = new Artikel("Warm Broodje", "met vlees en gesmolten kaas", new BigDecimal(3.95));
-	Artikel arti2 = new Artikel("Cappucino", "Met melkschuim en cacao", new BigDecimal(1.95));
-	Artikel arti3 = new Artikel("Thee", "Alle soorten", new BigDecimal(1.20));
-	
-	
-	this.artikelDAO.save(arti);
-	this.artikelDAO.save(arti2);
-	this.artikelDAO.save(arti3);
-*/		
-
-

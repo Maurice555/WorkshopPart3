@@ -1,25 +1,14 @@
 package com.workshop3.dao.mysql;
 
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.*;
 
-import javax.ejb.TransactionManagement;
-import javax.ejb.TransactionManagementType;
-import javax.enterprise.context.*;
-import javax.inject.*;
+import javax.enterprise.context.ConversationScoped;
 import javax.persistence.*;
-import javax.transaction.Transactional;
 
-import org.eclipse.persistence.exceptions.DatabaseException;
-
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import com.workshop3.model.Adres;
 
-@Named
-@Transactional(rollbackOn = {MySQLIntegrityConstraintViolationException.class, DatabaseException.class})
 @ConversationScoped
-public class AdresDAO extends DAO<Adres> {
+public class AdresDAO extends DAO<Adres> implements com.workshop3.dao.DAOIface<Adres> {
 	
 	private static final long serialVersionUID = 101L;
 	
@@ -29,14 +18,15 @@ public class AdresDAO extends DAO<Adres> {
 	public AdresDAO() { super(Adres.class); }
 	
 	
-	@Override 
-	public void update(Adres a) throws RollbackException {}// Adressen mogen niet geupdate
-	
-	
+	@Override
+	public Adres get(String[] uniqueValues) {
+		return findByPostcodeAndHuisnummer(uniqueValues[0], Integer.parseInt(uniqueValues[1]), uniqueValues[2]);
+	}
+		
 	public List<Adres> findByStraatAndHuisnummer(String straat, int huisnummer, String plaats) {
 		List<Adres> adresList = new ArrayList<Adres>();
 		for (Adres a : findByStraat(straat, plaats)) {
-			if(a.getHuisnummer() == huisnummer) {
+			if(huisnummer == 0 || a.getHuisnummer() == huisnummer) {
 				adresList.add(a);
 			}
 		}
@@ -45,7 +35,7 @@ public class AdresDAO extends DAO<Adres> {
 	
 	public List<Adres> findByStraat(String straat, String plaats) {
 		return this.em.createNativeQuery
-				("select * from Adres where straatnaam = '" + straat + "' and woonplaats = '" + plaats + "'", Adres.class)
+				("select * from Adres where straatnaam = '"+ straat +"' and woonplaats = '"+ plaats +"'", Adres.class)
 				.getResultList();
 	}
 
@@ -68,7 +58,9 @@ public class AdresDAO extends DAO<Adres> {
 	
 	
 	public static long getSerialversionuid() {return serialVersionUID;}
-	
+
+
+		
 	
 	
 }

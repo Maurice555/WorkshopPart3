@@ -43,8 +43,10 @@ public class Account extends EntityTemplate {
 	}
 	
 
+	@Override
 	public long getId() {return this.id;}
 
+	@Override
 	public void setId(long id) {this.id = id;}
 
 	public Klant getKlant() {return this.klant;}
@@ -62,7 +64,13 @@ public class Account extends EntityTemplate {
 	public Date getDatum() {return this.datum;}
 
 	public void setDatum(Date datum) {this.datum = datum;}
-
+	
+	
+	@Override
+	public String[] uniqueValue() {
+		return new String[] {getLogin()};
+		
+	}
 	
 	@Override
 	public String toString() {

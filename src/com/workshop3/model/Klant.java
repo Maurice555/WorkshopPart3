@@ -111,19 +111,11 @@ public class Klant extends EntityTemplate {
 	public void setAccounts(Set<Account> accounts) {this.accounts = accounts;}
 	
 	
-	public boolean hasAccount() {
-		return this.accounts != null && !this.accounts.isEmpty();
+	@Override
+	public String[] uniqueValue() {
+		return new String[] {getEmail()};
 	}
 	
-	public boolean hasAdres() {
-		return this.adres != null;
-	}
-	
-	public boolean hasValidEmail() {
-		return KlantService.isValidEmail(this.email);
-	}
-		
-
 	@Override
 	public String toString(){
 		return "klantnummer: " + this.id + "\n" + 

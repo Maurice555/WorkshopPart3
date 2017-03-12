@@ -35,7 +35,7 @@ public class VerkoopView implements java.io.Serializable {
 	
 	
 	public List<Artikel> getArtikelAanbod() {
-		return getBestelService().getArtikelList();
+		return getBestelService().fetchSimple();
 	}
 
 	
@@ -44,11 +44,9 @@ public class VerkoopView implements java.io.Serializable {
 
 		this.bestelService.process(this.bestelling);
 			
-		//this.bestelling = new Bestelling();
-		
-		this.bestelService.statusUpdate(8, 2);
-		this.bestelService.statusUpdate(15, 3);
-		this.bestelService.statusUpdate(58, 4);
+		this.bestelService.statusUpdate(59, 2);
+		this.bestelService.statusUpdate(80, 3);
+		this.bestelService.statusUpdate(77, 4);
 		
 		return "Tried to save: " + getBestelling() + " - -checkOut -- - " + 
 				this.bestelService.getBestelListByKlant(1) + " - - - - ";

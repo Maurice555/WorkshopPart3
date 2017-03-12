@@ -5,12 +5,11 @@ import javax.inject.Named;
 import javax.persistence.*;
 import javax.transaction.Transactional;
 
+import com.workshop3.dao.DAOIface;
 import com.workshop3.model.Artikel;
 
-@Named
-@Transactional
 @ConversationScoped
-public class ArtikelDAO extends DAO<Artikel> {
+public class ArtikelDAO extends DAO<Artikel> implements com.workshop3.dao.DAOIface<Artikel> {
 
 	private static final long serialVersionUID = 1L;
 	

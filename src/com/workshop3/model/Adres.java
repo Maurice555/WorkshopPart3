@@ -83,13 +83,27 @@ public class Adres extends EntityTemplate {
 	
 	public String getPostcode() {return this.postcode;}
 	
-	public void setPostcode(String postcode) {this.postcode = postcode.toUpperCase();}
+	public void setPostcode(String postcode) {this.postcode = postcode.toUpperCase().trim();}
 	
 	public String getWoonplaats() {return this.woonplaats;}
 	
 	public void setWoonplaats(String plaats) {this.woonplaats = KlantService.firstCapital(plaats);}
 		
+	public Set<Klant> getBewoners() {return this.bewoners;}
+
+	public void setBewoners(Set<Klant> bewoners) {this.bewoners = bewoners;}
+
+	public Set<Klant> getBezorgers() {return this.bezorgers;}
+
+	public void setBezorgers(Set<Klant> bezorgers) {this.bezorgers = bezorgers;}
+	
+
+	@Override
+	public String[] uniqueValue() {
+		return new String[] {getPostcode(), getHuisnummer() + "", getToevoeging()};
 		
+	}
+	
 	@Override
 	public String toString() {
 		return "Adresnummer " + this.id + "\n " + 

@@ -2,10 +2,7 @@ package com.workshop3.dao.mysql;
 
 import java.util.*;
 
-import javax.annotation.Resource;
-import javax.ejb.*;
-import javax.enterprise.context.*;
-import javax.enterprise.inject.Produces;
+import javax.enterprise.context.ConversationScoped;
 import javax.inject.*;
 import javax.persistence.*;
 import javax.transaction.*;
@@ -13,10 +10,8 @@ import javax.transaction.*;
 import com.workshop3.model.Klant;
 import com.workshop3.service.KlantService;
 
-@Named
-@Transactional
 @ConversationScoped
-public class KlantDAO extends DAO<Klant> implements com.workshop3.dao.DAOIface<Klant>{
+public class KlantDAO extends DAO<Klant> implements com.workshop3.dao.DAOIface<Klant> {
 
 	private static final long serialVersionUID = 112L;
 	
@@ -24,7 +19,12 @@ public class KlantDAO extends DAO<Klant> implements com.workshop3.dao.DAOIface<K
 	private EntityManager em;
 	
 	public KlantDAO() { super(Klant.class); }
-
+	
+	
+	@Override
+	public Klant get(String[] uniqueValues) {
+		return get(uniqueValues[0]);
+	}
 	
 	public Klant get(String mail) {
 		return (Klant) this.em.createNativeQuery(

@@ -21,11 +21,14 @@ public class KlantView implements java.io.Serializable {
 	@Inject
 	private Adres adres;
 	
+	@Inject
 	private Account account;
 	
 	@Inject
 	private KlantService service;
 	
+	private static final String mailReedsInGebruik = "Dit e-mailadres is reeds in gebruik";
+
 	public KlantView() {}
 	
 	
@@ -41,18 +44,14 @@ public class KlantView implements java.io.Serializable {
 
 	public void setAccount(Account account) {this.account = account; setKlant(this.account.getKlant());}
 
-	public KlantService getService() {return this.service;}
 	
-	public void setService(KlantService service) {this.service = service;}
-
-
 	public void addAdresToKlant() {
 		this.klant.setAdres(this.service.getAdres(this.service.add(this.adres)));
 		updateKlant();
 	}
 	
 	public void addAccountToKlant() {
-		this.klant.getAccounts().add(this.service.getAccount(this.service.add(this.account)));
+		this.klant.getAccounts().add(this.service.getSimple(this.service.addSimple(this.account)));
 		updateKlant();
 	}
 	
@@ -66,37 +65,30 @@ public class KlantView implements java.io.Serializable {
 	}
 	
 	public void updateAccount() {
-		this.service.update(this.account, this.account.getId());
+		this.service.updateSimple(this.account, this.account.getId());
 	}
 	
-	public String getKlantString() {
-		if (!KlantService.isValidEmail(this.klant.getEmail())) {
-			return "";
-		}
-		if (this.klant.getAchternaam() == null || this.klant.getAchternaam().equals("")) {
-			getNameFromEmail();
-		}
-		return getName() + "\n" + this.klant.getEmail();
+	public void login() {
+		this.service.login(this.account.getLogin(), this.account.getPass());
 	}
 	
 	public String getName() {
 		return this.klant.getVoornaam() + " " + this.klant.getTussenvoegsel() + this.klant.getAchternaam(); 
 	}
 	
-	public String printAdres(int row) {
+	public Adres printAdres(int row) {
 		if (row == 0) {
-			return this.klant.getAdres().toString();
+			return this.klant.getAdres();
 		}
 		return printBezorgAdres(row);			
 	}
 	
-	public String printBezorgAdres(int row) {
-		List<Adres> bezorgAdressen = new ArrayList<Adres>();
-		bezorgAdressen.addAll(this.klant.getBezorgAdressen());
+	public Adres printBezorgAdres(int row) {
+		List<Adres> bezorgAdressen = new ArrayList<Adres>(this.klant.getBezorgAdressen()); 
 		try {
-			return bezorgAdressen.get(row - 1).toString();
+			return bezorgAdressen.get(row - 1);
 		} catch (IndexOutOfBoundsException e) {
-			return "_----___-----___--";
+			return null;
 		}
 	}
 	

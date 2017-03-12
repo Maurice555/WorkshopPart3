@@ -7,18 +7,12 @@ import java.util.List;
 
 import javax.enterprise.context.*;
 import javax.inject.*;
-import javax.jms.TransactionRolledBackException;
 import javax.persistence.*;
-import javax.servlet.ServletException;
 import javax.transaction.Transactional;
 
-import org.eclipse.persistence.exceptions.DatabaseException;
-
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
-import com.workshop3.model.EntityTemplate;
 
-@Named
-@Dependent
+@Transactional(rollbackOn = MySQLIntegrityConstraintViolationException.class)
 public abstract class DAO<E extends Serializable> implements Serializable {
 
 	private static final long serialVersionUID = 1001L;
@@ -29,7 +23,9 @@ public abstract class DAO<E extends Serializable> implements Serializable {
 	private Class<E> entity;
 	
 	@Inject
-	public DAO(Class<E> entity) {this.entity = entity;}
+	public DAO(Class<E> entity) {
+		this.entity = entity;
+	}
 	
 	
 	public EntityManager getEm() {return this.em;}
@@ -41,13 +37,17 @@ public abstract class DAO<E extends Serializable> implements Serializable {
 	public void setEntity(Class<E> entity) {this.entity = entity;}
 
 	
-	public void save(E e) throws RollbackException {
+	public void save(E e) throws RollbackException, MySQLIntegrityConstraintViolationException {
 		this.em.persist(e);
-		this.em.flush();
 	}
 	
 	public E get(long id) {
 		return this.em.find(this.entity, id);	
+	}
+	
+	//default behaviour for returning single result.. in this case with long id
+	public E get(String[] uniqueValues) {
+		return get(Long.parseLong(uniqueValues[0]));
 	}
 	
 	public List<E> getAll() {
@@ -60,9 +60,8 @@ public abstract class DAO<E extends Serializable> implements Serializable {
 		this.em.remove(get(id));
 	}
 	
-	public void update(E e) throws RollbackException {
+	public void update(E e) throws RollbackException, MySQLIntegrityConstraintViolationException {
 		this.em.merge(e);
-		this.em.flush();
 	}
 	
 	

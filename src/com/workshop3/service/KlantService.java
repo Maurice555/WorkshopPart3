@@ -1,40 +1,29 @@
 package com.workshop3.service;
 
-import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.SQLException;
 import java.util.*;
 
-import javax.enterprise.context.*;
-import javax.inject.*;
-import javax.transaction.*;
+import javax.enterprise.context.SessionScoped;
+import javax.inject.Inject;
+import javax.transaction.TransactionalException;
 
 import com.workshop3.dao.mysql.*;
 import com.workshop3.model.*;
 import com.workshop3.view.KlantView;
 
-@Named
 @SessionScoped
-public class KlantService extends AbstractEntityService<Klant> {
+public class KlantService extends DualEntityService<Klant, Account> {
 	
 	private static final long serialVersionUID = 1L;
 	
 	@Inject
-	private KlantDAO klantDAO;
-	
-	@Inject
 	private AdresDAO adresDAO;
-	
-	@Inject
-	private AccountDAO accountDAO;
 	
 	private BestellingService bestelService;
 	
 	private KlantView klantView;
 
-	private static final String mailReedsInGebruik = "Dit e-mailadres is reeds in gebruik";
-
-	private static final int duplicateKey = 1062;
-
-	public KlantService() { super(new KlantDAO()); }
+	public KlantService() { super(new KlantDAO(), new AccountDAO()); }
 
 	
 	public BestellingService getBestelService() {return this.bestelService;}
@@ -55,16 +44,16 @@ public class KlantService extends AbstractEntityService<Klant> {
 	public static boolean isValidEmail(String mail) {
 		return mail.matches("([(\\w)+\\.-]+)[\\w^_]+@[\\w-\\.]+[\\w^_]+(\\.([\\w^0-9_]){2,4}){1,2}");
 	}
-/* Werkt niet
+
 	public boolean isKnownEmail(String mail) {
-		return this.klantDAO.getEm().contains(this.klantDAO.get(mail));
+		return get(mail.toLowerCase()).getId() > 0;
 	}
-*/	
+	
 	public Klant klant() {
 		return getKlantView().getKlant();
 	}
 	
-	public long addOrUpdate(Klant k) {
+	public long addOrUpdate(Klant k) { // Misschien beter in de view dit..
 		String mail = k.getEmail().toLowerCase(); 
 		if (isValidEmail(mail)) {
 			k.setEmail(mail);
@@ -78,97 +67,81 @@ public class KlantService extends AbstractEntityService<Klant> {
 		return -1;
 	}
 	
-	public void addBestellingToNewKlant(long bestelID) { // OF hier gewoon een Bestelling afleveren
+	public void addBestellingToNewKlant(long bestelID) {
 		getKlantView().setKlant(new Klant());
 		klant().getBestellingen().add(getBestelService().get(bestelID));
 	}
+	
 	public Klant get(String mail) {
 		if (isValidEmail(mail)) {
-			return this.klantDAO.get(mail.toLowerCase());
+			return get(new String[] {mail.toLowerCase()});
 		}
 		return null;
 	}
-
+	
+	public Set<Klant> getKlantByAdres(Adres a) {
+		Set<Klant> klanten = new HashSet<Klant>(getAdres(a.getPostcode(), a.getHuisnummer(), a.getToevoeging())
+				.getBewoners());
+		klanten.addAll(a.getBezorgers());
+		return klanten;
+	}
+	
 	public long add(Adres adres) {
 		try {
 			this.adresDAO.save(adres);
 			return adres.getId();
-/*
-		} catch (SQLIntegrityConstraintViolationException e) {
-			if (e.getErrorCode() == duplicateKey) {
-				return 9;
-			}
-/*Anders zo... werkt ook niet
-
-		} catch (ServletException se) { // Uncatchable due to serverbug: https://java.net/jira/si/jira.issueviews:issue-html/GLASSFISH-21172/GLASSFISH-21172.html
-			if (se..getRootCause() instanceof DatabaseException) { https://java.net/jira/browse/GLASSFISH-21172
-				DatabaseException de = (DatabaseException) se.getRootCause();
-				if (de.getDatabaseErrorCode() == duplicateKey) {
-					return 24; // testing 124
-				} else if (de.getInternalException() instanceof MySQLIntegrityConstraintViolationException) {
-					return 21;
-				}
-			}
-
-		} catch (RollbackException re) { // Kan ook al niet
-			re.getCause(); // ServerBug	
-*/	
+		} catch (SQLException sqlexc) {
+			return errorCodeCheck(sqlexc, adres);
 		} catch (TransactionalException te) { // Is wat we catchen
-			if (te.getCause() instanceof RollbackException) { 
-				// Aanname is hier dat het om de Constraint is gegaan...
-				return this.adresDAO.findByPostcodeAndHuisnummer
-						(adres.getPostcode(), adres.getHuisnummer(), adres.getToevoeging())
-						.getId();
-			}
+			return rollbackCheck(te, adres);
 		}
-		return 0;
 	}
 	
-	public Adres getAdres(long adresId) {
-		return this.adresDAO.get(adresId);
+	public Adres getAdres(long adresID) {
+		return this.adresDAO.get(adresID);
+	}
+	
+	public Adres getAdres(String postcode, int huisnummer, String toevoeging) {
+		return this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer, toevoeging);
+	}
+	
+	public Set<Adres> getAdres(String postcode, int huisnummer) {
+		return new HashSet<Adres>(this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer));
+	}
+	
+	public Set<Adres> getAdres(String straat, int huisnummer, String toevoeging, String plaats) {
+		return new HashSet<Adres>(this.adresDAO.findByStraatAndHuisnummer(straat, huisnummer, plaats));
+	}
+	
+	public Set<Adres> getAdres(String straat, String plaats) {
+		return new HashSet<Adres>(this.adresDAO.findByStraat(straat, plaats));
 	}
 	
 	public Set<Account> getAccounts(long id) {
-		return this.klantDAO.get(id).getAccounts();
+		return get(id).getAccounts();
 	}
 	
-	public Account login(String login, String pass) {
-		if (this.accountDAO.get(login).getPass().equals(pass)) {
-			Account act = this.accountDAO.get(login);
-			getKlantView().setAccount(act);
-			return act;
-		}
-		return getAccount(-1);
-	}
-	
-	public Account getAccount(long accountID) {
-		return this.accountDAO.get(accountID);
-	}
-	
-	public long add(Account account) {
-		try {
-			this.accountDAO.save(account);
-			return account.getId();
-		} catch (TransactionalException te) {
-			return rollbackCheck(te);
+	public void login(String login, String pass) { // Moet misschien ook naar View
+		Account acct = getSimple(new String[] {login});
+		if (acct.getPass().equals(pass)) {
+			getKlantView().setAccount(acct);
 		}
 	}
 	
-	public void update(Account account, long id) {
-		getAccount(id);
-		try {
-			this.accountDAO.update(account);
-		} catch (TransactionalException e) {
-			rollbackCheck(e);
+	
+	@Override
+	protected long errorCodeCheck(SQLException sqlexc, EntityTemplate e) {
+		if (sqlexc.getErrorCode() == duplicateKey) {
+			return getAdres(((Adres)e).getPostcode(), ((Adres)e).getHuisnummer(), ((Adres)e).getToevoeging())
+					.getId();
 		}
+		return 0;
 	}
 
-
+	
 	
 	
 	public static long getSerialversionuid() {return serialVersionUID;}
-
-
 	
 	
 	
