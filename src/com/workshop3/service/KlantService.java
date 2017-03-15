@@ -6,10 +6,11 @@ import java.util.*;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 import javax.transaction.TransactionalException;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 
 import com.workshop3.dao.mysql.*;
 import com.workshop3.model.*;
-import com.workshop3.view.KlantView;
 
 @SessionScoped
 public class KlantService extends DualEntityService<Klant, Account> {
@@ -17,12 +18,13 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	private static final long serialVersionUID = 1L;
 	
 	@Inject
+	private KlantDAO klantDAO;
+	
+	@Inject
 	private AdresDAO adresDAO;
 	
 	private BestellingService bestelService;
 	
-	private KlantView klantView;
-
 	public KlantService() { super(new KlantDAO(), new AccountDAO()); }
 
 	
@@ -31,113 +33,119 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	@Inject
 	public void setBestelService(BestellingService bestelService) {this.bestelService = bestelService;}
 
-	public KlantView getKlantView() {return this.klantView;}
-	
-	@Inject
-	public void setKlantView(KlantView klantView) {this.klantView = klantView;}
-
 
 	public static String firstCapital(String s){
-		return s.replace(s.substring(0, 1), s.substring(0, 1).toUpperCase());
+		return s.trim().replace(s.substring(0, 1), s.substring(0, 1).toUpperCase());
 	}
 	
 	public static boolean isValidEmail(String mail) {
 		return mail.matches("([(\\w)+\\.-]+)[\\w^_]+@[\\w-\\.]+[\\w^_]+(\\.([\\w^0-9_]){2,4}){1,2}");
 	}
+	
+	public static String trimUpCase(String postcode) {
+		return postcode.trim().replace(" ", "").toUpperCase();
+	}
 
 	public boolean isKnownEmail(String mail) {
-		return get(mail.toLowerCase()).getId() > 0;
-	}
-	
-	public Klant klant() {
-		return getKlantView().getKlant();
-	}
-	
-	public long addOrUpdate(Klant k) { // Misschien beter in de view dit..
-		String mail = k.getEmail().toLowerCase(); 
-		if (isValidEmail(mail)) {
-			k.setEmail(mail);
-			long id = k.getId();
-			if (id > 0) {
-				update(k, id);
-				return id;
-			}
-			return add(k);
-		} 
-		return -1;
-	}
-	
-	public void addBestellingToNewKlant(long bestelID) {
-		getKlantView().setKlant(new Klant());
-		klant().getBestellingen().add(getBestelService().get(bestelID));
-	}
-	
-	public Klant get(String mail) {
-		if (isValidEmail(mail)) {
-			return get(new String[] {mail.toLowerCase()});
+		try {
+			if (get(mail.toLowerCase()).getId() > 0) { return true; }
+		} catch (NullPointerException ne) {
+			// geen klant gevonden
 		}
-		return null;
+		return false;
 	}
 	
-	public Set<Klant> getKlantByAdres(Adres a) {
-		Set<Klant> klanten = new HashSet<Klant>(getAdres(a.getPostcode(), a.getHuisnummer(), a.getToevoeging())
-				.getBewoners());
+// Custom Klant-zoekmethoden
+	public Klant get(String mail) {
+		if (isValidEmail(mail)) { return this.klantDAO.get(mail.toLowerCase());	}
+		return get(-3);
+	}
+	
+	public Set<Klant> findByVoorEnAchternaam(String voor, String achter) {
+		return new HashSet<Klant>(this.klantDAO.findByVoorEnAchternaam(voor, achter));
+	}
+	
+	public Set<Klant> findByAchternaam(String achter) {
+		return new HashSet<Klant>(this.klantDAO.findByAchternaam(achter));
+	}
+	
+	public Set<Klant> findKlantByAdres(Adres a) {
+		Set<Klant> klanten = new HashSet<Klant>(findByPostcodeAndHuisnummer(
+				a.getPostcode(), a.getHuisnummer(), a.getToevoeging())
+				.getBewoners()); 
 		klanten.addAll(a.getBezorgers());
 		return klanten;
 	}
 	
+// Adres methoden
 	public long add(Adres adres) {
 		try {
 			this.adresDAO.save(adres);
 			return adres.getId();
 		} catch (SQLException sqlexc) {
-			return errorCodeCheck(sqlexc, adres);
+			if (isDuplicateKeyError(sqlexc)) {
+				return getUniqueAdres(adres.uniqueValue()).getId();
+			}
 		} catch (TransactionalException te) { // Is wat we catchen
-			return rollbackCheck(te, adres);
+			if (isDuplicateKeyError(isSQLCauseForRollback(te))) {
+				return getUniqueAdres(adres.uniqueValue()).getId();
+			}
+			return txExc;
 		}
+		return saveExc;
 	}
 	
 	public Adres getAdres(long adresID) {
 		return this.adresDAO.get(adresID);
 	}
 	
-	public Adres getAdres(String postcode, int huisnummer, String toevoeging) {
-		return this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer, toevoeging);
+	public Adres getUniqueAdres(String[] uniqueValues) {
+		return findByPostcodeAndHuisnummer(uniqueValues[0], Integer.parseInt(uniqueValues[1]), uniqueValues[2]);
 	}
 	
-	public Set<Adres> getAdres(String postcode, int huisnummer) {
+	public Set<Adres> findByPostcodeAndHuisnummer(String postcode, int huisnummer) {
 		return new HashSet<Adres>(this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer));
 	}
 	
-	public Set<Adres> getAdres(String straat, int huisnummer, String toevoeging, String plaats) {
-		return new HashSet<Adres>(this.adresDAO.findByStraatAndHuisnummer(straat, huisnummer, plaats));
+	public Adres findByPostcodeAndHuisnummer(String postcode, int huisnummer, String toevoeging) {
+		for (Adres a : findByPostcodeAndHuisnummer(postcode, huisnummer)) {
+			if (hasEqualToevoeging(a, toevoeging)) { return a; }
+		}
+		return null;
 	}
-	
-	public Set<Adres> getAdres(String straat, String plaats) {
+
+	public Set<Adres> findByStraatAndPlaats(String straat, String plaats) {
 		return new HashSet<Adres>(this.adresDAO.findByStraat(straat, plaats));
 	}
 	
+	public Set<Adres> findByStraatAndHuisnummer(String straat, int huisnummer, String plaats) {
+		Set<Adres> adresSet = new HashSet<Adres>();
+		for (Adres a : findByStraatAndPlaats(straat, plaats)) {
+			if (huisnummer == 0 || a.getHuisnummer() == huisnummer) {
+				adresSet.add(a);
+			}
+		}
+		return adresSet;
+	}
+	
+	public Adres findByStraatAndHuisnummer(String straat, int huisnummer, String toevoeging, String plaats) {
+		for (Adres a : findByStraatAndHuisnummer(straat, huisnummer, plaats)) {
+			if (hasEqualToevoeging(a, toevoeging)) { return a; }
+		}
+		return null;
+	}
+
+	public static boolean hasEqualToevoeging(Adres a, String toevoeging) {
+		return a.getToevoeging().trim().equalsIgnoreCase(toevoeging.trim());
+	}
+
+// Accountbeheer <Simple>
 	public Set<Account> getAccounts(long id) {
 		return get(id).getAccounts();
 	}
 	
-	public void login(String login, String pass) { // Moet misschien ook naar View
-		Account acct = getSimple(new String[] {login});
-		if (acct.getPass().equals(pass)) {
-			getKlantView().setAccount(acct);
-		}
-	}
 	
 	
-	@Override
-	protected long errorCodeCheck(SQLException sqlexc, EntityTemplate e) {
-		if (sqlexc.getErrorCode() == duplicateKey) {
-			return getAdres(((Adres)e).getPostcode(), ((Adres)e).getHuisnummer(), ((Adres)e).getToevoeging())
-					.getId();
-		}
-		return 0;
-	}
-
 	
 	
 	

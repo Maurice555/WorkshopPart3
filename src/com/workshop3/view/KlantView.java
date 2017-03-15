@@ -3,7 +3,6 @@ package com.workshop3.view;
 import java.util.*;
 
 import javax.enterprise.context.*;
-import javax.faces.bean.ManagedBean;
 import javax.inject.*;
 
 import com.workshop3.model.*;
@@ -26,50 +25,79 @@ public class KlantView implements java.io.Serializable {
 	
 	@Inject
 	private KlantService service;
-	
-	private static final String mailReedsInGebruik = "Dit e-mailadres is reeds in gebruik";
 
+	public static String result = "SUCCESS";
+	
 	public KlantView() {}
 	
 	
 	public Klant getKlant() {return this.klant;}
 	
-	public void setKlant(Klant klant) {this.klant = klant; this.adres = this.klant.getAdres();}
+	public void setKlant(Klant k) {this.klant = k; this.adres = this.klant.getAdres();}
 	
 	public Adres getAdres() {return this.adres;}
 	
-	public void setAdres(Adres adres) {this.adres = adres;}
+	public void setAdres(Adres a) {this.adres = a;}
 
 	public Account getAccount() {return this.account;}
 
-	public void setAccount(Account account) {this.account = account; setKlant(this.account.getKlant());}
+	public void setAccount(Account act) {this.account = act; setKlant(this.account.getKlant());}
 
+	public static String getResult() {return result;}
+	
+	
+	private static void setResult(long outcome) {
+		if (outcome <= 0) {
+			switch ((int) outcome) {
+				case -3: result = "InvalidEmail"; break;
+				case -2: result = "TransactionalException"; break;
+				case -1: result = "LoginFailed"; break;
+				case  0: result = "SaveFailed"; break;
+				default: result = "UnknownError"; break;
+			}
+		} else { result = "SUCCESS"; }
+	}
+	
 	
 	public void addAdresToKlant() {
 		this.klant.setAdres(this.service.getAdres(this.service.add(this.adres)));
-		updateKlant();
+		setResult(addOrUpdate());
 	}
-	
+		
 	public void addAccountToKlant() {
 		this.klant.getAccounts().add(this.service.getSimple(this.service.addSimple(this.account)));
-		updateKlant();
+		setResult(addOrUpdate());
 	}
 	
 	public void addBezorgAdres() {
 		this.klant.getBezorgAdressen().add(this.service.getAdres(this.service.add(this.adres)));
-		updateKlant();
+		setResult(addOrUpdate());
 	}
 
-	public long updateKlant() {
-		return this.service.addOrUpdate(this.klant);
+	public long addOrUpdate() {
+		String mail = this.klant.getEmail().toLowerCase(); 
+		if (KlantService.isValidEmail(mail)) {
+			this.klant.setEmail(mail);
+			long id = this.klant.getId();
+			if (id > 0) {
+				return this.service.update(this.klant);
+			}
+			return this.service.add(this.klant);
+		}
+		return -3;
 	}
 	
 	public void updateAccount() {
-		this.service.updateSimple(this.account, this.account.getId());
+		setResult(this.service.updateSimple(this.account));
 	}
 	
-	public void login() {
-		this.service.login(this.account.getLogin(), this.account.getPass());
+	public long login() {
+		Account acct = this.service.getUniqueSimple(new String[] {this.account.getLogin()});
+		if (acct.getPass().equals(this.account.getPass())) {
+			setAccount(acct);
+			return acct.getId();
+		}
+		return -1;
 	}
 	
 	public String getName() {

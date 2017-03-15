@@ -2,7 +2,6 @@ package com.workshop3.model;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.time.LocalDate;
 import java.util.*;
 
 import javax.enterprise.context.SessionScoped;
@@ -13,7 +12,7 @@ import javax.persistence.*;
 @SessionScoped
 @Entity
 @Table(name = "Bestelling")
-public class Bestelling extends EntityTemplate {
+public class Bestelling implements EntityIface {
 	
 	@Transient
 	private static final long serialVersionUID = 1L;
@@ -51,7 +50,6 @@ public class Bestelling extends EntityTemplate {
 	public Bestelling(Klant k) {
 		this.klant = k;
 		this.stati = new HashMap<Integer, Date>();
-		this.datum = new Date();
 		this.artikelen = new HashMap<Artikel, Integer>();
 	}
 
@@ -98,9 +96,13 @@ public class Bestelling extends EntityTemplate {
 		}
 	}
 	
+	public void updateStatus(int status) {
+		this.stati.put(status, new Date());
+	}
+	
 	public BigDecimal totaalPrijs() {
 		BigDecimal total = new BigDecimal(0.0);
-		for (Map.Entry<Artikel, Integer> entry : getArtikelen().entrySet()) {
+		for (Map.Entry<Artikel, Integer> entry : this.artikelen.entrySet()) {
 			BigDecimal artikelTimesAantal = entry.getKey().getPrijs()
 					.multiply(new BigDecimal(entry.getValue()));
 			
@@ -111,8 +113,8 @@ public class Bestelling extends EntityTemplate {
 	
 	@Override
 	public String toString() {
-		return "Bestellingnummer#: " + getId() + " " + getArtikelen() + " " + 
-				NumberFormat.getCurrencyInstance().format(totaalPrijs());
+		return "Bestellingnummer#: " + getId() + " klantID: " + getKlant().getId() + " " + getDatum() + 
+				" ArtikelLijst: " + getArtikelen() + " " + NumberFormat.getCurrencyInstance().format(totaalPrijs());
 	}
 
 	

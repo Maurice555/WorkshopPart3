@@ -11,7 +11,7 @@ import javax.persistence.*;
 @SessionScoped
 @Entity
 @Table(name = "Artikel")
-public class Artikel extends EntityTemplate {
+public class Artikel implements EntityIface {
 	
 	@Transient
 	private static final long serialVersionUID = 1L;
@@ -56,6 +56,7 @@ public class Artikel extends EntityTemplate {
 
 	public void setPrijs(BigDecimal prijs) {this.prijs = prijs;}
 	
+	
 	@Override
 	public String toString() {
 		return "Artikelnummer: " + getId() + " " + getNaam() + " " 
@@ -65,8 +66,7 @@ public class Artikel extends EntityTemplate {
 	@Override
 	public boolean equals(Object a) {
 		if (a instanceof Artikel) {
-			Artikel artikel = (Artikel) a;
-			return artikel.getId() == this.id;
+			return ((Artikel) a).getId() == this.id;
 		}
 		return false;
 	}

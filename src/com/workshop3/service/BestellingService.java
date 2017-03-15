@@ -1,7 +1,6 @@
 package com.workshop3.service;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -20,34 +19,15 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 	@Inject
 	private BestellingDAO bestelDAO;
 	
-	private KlantService klantService;
-
 	private static final int maxNumOfStati = 7;
 
 	public BestellingService() { super(new BestellingDAO(), new ArtikelDAO()); }
 	
 	
-	public KlantService getKlantService() {return this.klantService;}
-	
-	@Inject
-	public void setKlantService(KlantService service) {this.klantService = service;}
-	
-
-	public long process(Bestelling bestelling) {
-		if (bestelling.getKlant() != null && bestelling.getKlant().getId() > 0) { // Klant is set
-			return add(bestelling);
-		} 
-		if (getKlantService().klant() != null && getKlantService().klant().getId() > 0) { // Saved Klant in KlantView
-			bestelling.setKlant(getKlantService().klant());
-			return add(bestelling);
-		}
-		long id = add(bestelling);
-		getKlantService().addBestellingToNewKlant(id);
-		return id;		
-	}
-	
 	public void statusUpdate(long id, int status) {
-		this.bestelDAO.statusUpdate(id, status);
+		Bestelling b = get(id);
+		b.updateStatus(status);
+		update(b);
 	}
 	
 	public int getStatus(long id) {
@@ -63,9 +43,7 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 	}
 	
 	public String readStatus(long id) {
-		int status = getStatus(id);
-		
-		switch (status) {
+		switch (getStatus(id)) {
 			case 0:
 				return "Onbetaald";
 			case 1:
@@ -81,14 +59,32 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		}
 	}
 	
-	public Set<Bestelling> getBestelListByKlant(long klantID) {
+	public Set<Bestelling> findByDate(LocalDate datum) {
+		return new HashSet<Bestelling>(this.bestelDAO.findByDateAndPeriod(datum, Period.ofDays(1)));
+	}
+	
+	public Set<Bestelling> findByDateAndPeriod(LocalDate beginDatum, Period p) {
+		return new HashSet<Bestelling>(this.bestelDAO.findByDateAndPeriod(beginDatum, p));
+	}
+	
+	public Set<Bestelling> findByDate(LocalDate beginDatum, LocalDate eindDatum) {
+		return new HashSet<Bestelling>(this.bestelDAO.findByDateAndPeriod(beginDatum, beginDatum.until(eindDatum)));
+	}
+		
+	public Set<Bestelling> findByLatestPeriod(Period period) {
+		return new HashSet<Bestelling>(this.bestelDAO.findByDateAndPeriod(LocalDate.now().minus(period), period));
+	}
+	
+	public Set<Bestelling> findByKlant(long klantID) {
 		return new HashSet<Bestelling>(this.bestelDAO.getEm().createNativeQuery(
 				"select * from Bestelling where klantId = " + klantID, Bestelling.class)
 				.getResultList());
 	}
 	
-	public Set<Bestelling> getBestellingList() {
-		return new HashSet<Bestelling>(fetch());
+	public Set<Bestelling> findByKlantAndDate(long klantID, LocalDate datum) {
+		Set<Bestelling> bestellingen = new HashSet<Bestelling>(findByDate(datum));
+		bestellingen.retainAll(findByKlant(klantID));
+		return bestellingen;
 	}
 	
 	public long getKlantByBestelling(long id) {
@@ -115,31 +111,38 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 						.multiply(new BigDecimal(entry.getValue()));
 				turnover = turnover.add(artikelTimesAantal);
 			}
-			bestellingen.remove(b);
 		}
 		return turnover;
 	}
 	
-	public String statusProgress(Period p, int begin, int change) {
-		Set<Bestelling> bestellingen = bestellingPerStatus(p, begin);
-		int som = 0;
-		double totaalVerandering = 0.0; 
-		int progress = 0;
+	public static Map<String, Number> statusProgress(Set<Bestelling> bestellingen, int minChange) {
+		int totaalAantal, totaalVerandering, updates, changed, progress, prev;
+		totaalAantal = totaalVerandering = updates = changed = progress = prev = 0;
 		for (Bestelling b : bestellingen) {
-			for (int i = begin; i < maxNumOfStati; i++) {
-				if (b.getStati().containsKey(i + change)) {
-					progress = i + change;
+			for (int i = 0; i < maxNumOfStati; i++) {
+				if (b.getStati().containsKey(i + minChange)) {
+					progress = i + minChange;
+					updates++;
 				}
 			}
-			som++; totaalVerandering += progress; progress = 0;
+			if (updates > prev) {prev = updates; changed++;}
+			totaalAantal++;
+			totaalVerandering += progress;
+			progress = 0;
 		}
-		double avgProg = totaalVerandering / som;
-		return "Aantal bestellingen met statusverandering = " + som + " waarde van de statusveranderingen = " + 
-				NumberFormat.getIntegerInstance().format(totaalVerandering) +	" gemiddelde progressie = " + 
-				avgProg;
+		double percentageChanged = changed * 100.0 / totaalAantal;
+		double avgProg = totaalVerandering * 1.0 / changed;
+		Map<String, Number> progression = new LinkedHashMap<String, Number>();
+		progression.put("Aantal getelde bestellingen", totaalAantal);
+		progression.put("Percentage met minimale (" + minChange + ") progressie", percentageChanged);
+		progression.put("Aantal bestellingen met minimale progressie", changed);
+		progression.put("Aantal voldoende statusveranderingen", updates);
+		progression.put("Totale waarde van de voldoende statusveranderingen", totaalVerandering);
+		progression.put("Gemiddelde progressie bij voldoende verandering", avgProg);
+		return  progression;
 	}
 	
-	public Set<Bestelling> bestellingPerStatus(Period p, int minStatus) {
+	public Set<Bestelling> findBestellingPerStatus(Period p, int minStatus) {
 		return new HashSet<Bestelling>(this.bestelDAO.getEm().createNativeQuery(
 				"select * from Bestelling inner join bestellingHasStatus on bestellingHasStatus.datum > '" + 
 				LocalDate.now().minus(p).format(DateTimeFormatter.ISO_DATE)	+ 
@@ -147,17 +150,6 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 				" and Bestelling.id = bestellingHasStatus.bestellingId", Bestelling.class)
 				.getResultList());
 	}
-	
-	public Set<Bestelling> bestellingPerPeriod(Period period) {
-		Set<Bestelling> bestellingen = new HashSet<Bestelling>();
-		bestellingen.addAll(this.bestelDAO.getEm().createNativeQuery(
-				"select * from Bestelling where datum > '" + LocalDate.now().minus(period)
-				.format(DateTimeFormatter.ISO_DATE) + "'", Bestelling.class)//ofPattern("yyyy-MM-dd HH:mm:ss")
-				.getResultList());
-		
-		return  bestellingen;
-	}
-
 	
 	
 	

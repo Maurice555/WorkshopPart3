@@ -1,17 +1,17 @@
 package com.workshop3.service;
 
 import java.sql.SQLException;
-import java.util.List;
+import java.util.*;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.transaction.TransactionalException;
 
 import com.workshop3.dao.DAOIface;
-import com.workshop3.model.EntityTemplate;
+import com.workshop3.model.EntityIface;
 
 @Dependent
-public abstract class DualEntityService<E extends EntityTemplate, S extends EntityTemplate> 
+public abstract class DualEntityService<E extends EntityIface, S extends EntityIface> 
 		extends AbstractEntityService<E> {
 
 	private static final long serialVersionUID = 1L;
@@ -35,8 +35,8 @@ public abstract class DualEntityService<E extends EntityTemplate, S extends Enti
 		return this.simpleDAO.get(id);
 	}
 	
-	public S getSimple(String[] uniqueValues) {
-		return this.simpleDAO.get(uniqueValues);
+	public S getUniqueSimple(String[] uniqueValues) {
+		return this.simpleDAO.getUnique(uniqueValues);
 	}
 	
 	public long addSimple(S s) {
@@ -44,39 +44,44 @@ public abstract class DualEntityService<E extends EntityTemplate, S extends Enti
 			this.simpleDAO.save(s);
 			return s.getId();
 		} catch (SQLException sqlexc) {
-			return errorCodeCheck(sqlexc, s);		
+			if (isDuplicateKeyError(sqlexc)) {
+				return getUniqueSimple(s.uniqueValue()).getId();
+			}
 		} catch (TransactionalException txexc) {
-			return rollbackCheck(txexc, s);
-		}	
+			if (isDuplicateKeyError(isSQLCauseForRollback(txexc))) {
+				return getUniqueSimple(s.uniqueValue()).getId();
+			}
+			return txExc;
+		}
+		return saveExc;
 	}
 		
-	public void updateSimple(S s, long id) {
-		getSimple(id);
+	public long updateSimple(S s) {
 		try {
 			this.simpleDAO.update(s);
+			return s.getId();
 		} catch (SQLException sqlexc) {
-			errorCodeCheck(sqlexc, s);		
+			if (isDuplicateKeyError(sqlexc)) {
+				return getUniqueSimple(s.uniqueValue()).getId();
+			}			
 		} catch (TransactionalException txexc) {
-			rollbackCheck(txexc, s);
-		}	
-	}
-	
-	public void deleteSimple(long id) {
-		getSimple(id);
-		this.simpleDAO.delete(id);
-	}
-	
-	public List<S> fetchSimple() {
-		return this.simpleDAO.getAll();
-	}
-	
-	
-	@Override
-	protected long errorCodeCheck(SQLException sqlexc, EntityTemplate e) {
-		if (sqlexc.getErrorCode() == duplicateKey) {
-			return this.simpleDAO.get(e.uniqueValue()).getId();
+			if (isDuplicateKeyError(isSQLCauseForRollback(txexc))) {
+				return getUniqueSimple(s.uniqueValue()).getId();
+			}
+			return txExc;
 		}
-		return 0;
+		return saveExc;
 	}
+	
+	public S deleteSimple(long id) {
+		S s = getSimple(id);
+		this.simpleDAO.delete(id);
+		return s;
+	}
+	
+	public Set<S> fetchSimple() {
+		return new HashSet<S>(this.simpleDAO.getAll());
+	}
+	
 	
 }

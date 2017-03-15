@@ -3,15 +3,13 @@ package com.workshop3.dao.mysql;
 import java.util.*;
 
 import javax.enterprise.context.ConversationScoped;
-import javax.inject.*;
 import javax.persistence.*;
-import javax.transaction.*;
 
 import com.workshop3.model.Klant;
-import com.workshop3.service.KlantService;
+import static com.workshop3.service.KlantService.*;
 
 @ConversationScoped
-public class KlantDAO extends DAO<Klant> implements com.workshop3.dao.DAOIface<Klant> {
+public class KlantDAO extends DAO<Klant> {
 
 	private static final long serialVersionUID = 112L;
 	
@@ -20,9 +18,8 @@ public class KlantDAO extends DAO<Klant> implements com.workshop3.dao.DAOIface<K
 	
 	public KlantDAO() { super(Klant.class); }
 	
-	
 	@Override
-	public Klant get(String[] uniqueValues) {
+	public Klant getUnique(String[] uniqueValues) {
 		return get(uniqueValues[0]);
 	}
 	
@@ -32,16 +29,16 @@ public class KlantDAO extends DAO<Klant> implements com.workshop3.dao.DAOIface<K
 				.getSingleResult();
 	}
 	
-	public List<Klant> getByAchternaam(String achter) {
+	public List<Klant> findByAchternaam(String achter) {
 		return this.em.createNativeQuery(
-				"select * from Klant where achternaam = '" + KlantService.firstCapital(achter) + "'", Klant.class)
+				"select * from Klant where achternaam = '" + firstCapital(achter) + "'", Klant.class)
 				.getResultList();
 	}
 	
-	public List<Klant> getByVoorEnAchternaam(String voor, String achter) {
+	public List<Klant> findByVoorEnAchternaam(String voor, String achter) {
 		return this.em.createNativeQuery(
-				"select * from Klant where voornaam = '" + KlantService.firstCapital(voor) + 
-				"' and achternaam = '" + KlantService.firstCapital(achter) + "'", Klant.class)
+				"select * from Klant where voornaam = '" + firstCapital(voor) + 
+				"' and achternaam = '" + firstCapital(achter) + "'", Klant.class)
 				.getResultList();
 	}
 		
@@ -50,7 +47,7 @@ public class KlantDAO extends DAO<Klant> implements com.workshop3.dao.DAOIface<K
 		
 }
 
-/*	
+/*	JPA query language:..
 this.em.createQuery("SELECT c FROM Customer c WHERE c.name LIKE :custName", Klant.class))
 	.setParameter("custName", "Bugs")
 	.setMaxResults(10)

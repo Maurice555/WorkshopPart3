@@ -1,12 +1,10 @@
 package com.workshop3.manager;
 
-import java.text.NumberFormat;
 import java.time.Period;
-import java.util.*;
+import java.util.Set;
 
 import javax.enterprise.context.*;
 import javax.inject.*;
-import javax.faces.bean.ManagedBean;
 
 import com.workshop3.model.*;
 import com.workshop3.view.KlantView;
@@ -52,41 +50,33 @@ public class KlantManager implements java.io.Serializable {
 	public VerkoopView getVerkoopView() {return this.verkoopView;}
 
 	
-	public String delivery(){
+	public String delivery() {
 		
-		//Testfase
-
-		getKlantView().setKlant(new Klant());
+		getBestelService().statusUpdate(188, 3);
+		getBestelService().statusUpdate(165, 4);
 		
+		Account acct = getKlantService().getUniqueSimple(new String[] {"Abstract"});
 		
-//		Account acct = new Account(klant());
-//		acct.setLogin("Abstract");
-//		acct.setPass("Dually");
-//		//acct.setKlant(getKlantService().get(""));
+		getKlantView().setAccount(acct);
 		
-		//getKlantView().setAccount(acct);
+		getKlantService().addSimple(acct);
 		
-		getKlantService().login("Abstract", "XXXXX");
+		getKlantView().setKlant(getKlantService().get("ver@ander.ing"));
+		getKlantView().setAdres(new Adres("Oosterstraat", 33, "9712 Pp", "Groningen"));
 		
-		getKlantView().setAdres(getKlantService().getAdres("9955PP", 2, "b"));
+		Period p = Period.ofDays(4);
 		
 		
-		Bestelling bestelling = new Bestelling();
-		bestelling.addArtikel(getBestelService().getSimple(4), 7);
-		bestelling.addArtikel(getBestelService().getSimple(6), 5);
-		
-		bestelling.removeArtikel(getBestelService().getSimple(5), 1);
-		
-		getVerkoopView().setBestelling(bestelling);
+		Set<Bestelling> onbetaalde = getBestelService().findByLatestPeriod(p);
+		onbetaalde.removeAll(getBestelService().findBestellingPerStatus(p, 1));
 		
 		
-		
-		return "Nice to do business with you! @ " + 
-				getKlantView().getAdres() + " " +
+		return "Nice to do business with you! @ Now pay! - - - " +
+				onbetaalde +
 				" - - - - for someone like " + 
-				getKlantView().getAccount() + 
-				" - - With Order -- - - " +   
-				getVerkoopView().getBestelling();
+				klant() + 
+				" - - With no Order -- - - " +
+				getBestelService().readStatus(208);
 	}
 	
 	
@@ -98,15 +88,16 @@ public class KlantManager implements java.io.Serializable {
 		
 		//getKlantService().updateSimple(getKlantView().getAccount(), 5);
 		
-		getBestelService().statusUpdate(150, 4);
-		
-		Period p = Period.ofDays(4);
+		getBestelService().statusUpdate(201, 4);
 		
 		
 		
-		return getKlantService().getKlantByAdres(getKlantView().getAdres())+ "- - - - - Amount Earned = " + 
-				getBestelService().statusProgress(p, 0, 1) + 
-				"-- -- - Account - -- -" + getKlantView().getAccount();
+
+		
+		return getKlantView().getAccount() + 
+				"- - - - - Amount Earned = " + 
+				BestellingService.statusProgress(getBestelService().fetch(), 1) + 
+				"-- -- - Result - -- -" + KlantView.getResult(); 
 	}
 	
 	

@@ -13,7 +13,7 @@ import java.util.*;
 @SessionScoped
 @Entity
 @Table(name = "Klant")
-public class Klant extends EntityTemplate {
+public class Klant implements EntityIface {
 	
 	@Transient
 	private static final long serialVersionUID = 1L;
@@ -70,6 +70,7 @@ public class Klant extends EntityTemplate {
 		this.adres = null;
 		this.bestellingen = new HashSet<Bestelling>();
 		this.accounts = new HashSet<Account>();
+		this.bezorgAdressen = null;
 	}
 	
 	@Override
@@ -118,7 +119,7 @@ public class Klant extends EntityTemplate {
 	
 	@Override
 	public String toString(){
-		return "klantnummer: " + this.id + "\n" + 
+		return "Klantnummer: " + this.id + "\n" + 
 				this.voornaam + " " + getTussenvoegsel() + this.achternaam + "\n" + 
 				this.email;
 	}

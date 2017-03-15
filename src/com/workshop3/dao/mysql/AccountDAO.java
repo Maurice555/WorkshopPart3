@@ -6,7 +6,7 @@ import javax.persistence.*;
 import com.workshop3.model.Account;
 
 @ConversationScoped
-public class AccountDAO extends DAO<Account> implements com.workshop3.dao.DAOIface<Account> {
+public class AccountDAO extends DAO<Account> {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -15,10 +15,10 @@ public class AccountDAO extends DAO<Account> implements com.workshop3.dao.DAOIfa
 	
 	public AccountDAO() { super(Account.class); }
 
+	
 	@Override
-	public Account get(String[] uniqueValues) {
+	public Account getUnique(String[] uniqueValues) {
 		return get(uniqueValues[0]);
-		
 	}
 	
 	public Account get(String login) {

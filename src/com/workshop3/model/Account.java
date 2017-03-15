@@ -1,7 +1,6 @@
 package com.workshop3.model;
 
 import java.util.Date;
-import java.util.Set;
 
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Named;
@@ -11,7 +10,7 @@ import javax.persistence.*;
 @SessionScoped
 @Entity
 @Table(name = "Account")
-public class Account extends EntityTemplate {
+public class Account implements EntityIface {
 
 	@Transient
 	private static final long serialVersionUID = 1L;

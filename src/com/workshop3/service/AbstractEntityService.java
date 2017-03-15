@@ -2,18 +2,17 @@ package com.workshop3.service;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.*;
 
 import javax.enterprise.context.Dependent;
-import javax.inject.*;
-import javax.transaction.RollbackException;
+import javax.inject.Inject;
 import javax.transaction.TransactionalException;
 
 import com.workshop3.dao.DAOIface;
-import com.workshop3.model.EntityTemplate;
+import com.workshop3.model.EntityIface;
 
 @Dependent
-public abstract class AbstractEntityService<E extends EntityTemplate> implements Serializable {
+public abstract class AbstractEntityService<E extends EntityIface> implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -35,8 +34,12 @@ public abstract class AbstractEntityService<E extends EntityTemplate> implements
 		return this.entityDAO.get(id);
 	}
 	
-	public E get(String[] uniqueValues) {
-		return this.entityDAO.get(uniqueValues);
+	public E getUnique(String[] uniqueValues) {
+		return this.entityDAO.getUnique(uniqueValues);
+	}
+	
+	public Set<E> get(Map<String, String> keyValues) {
+		return new HashSet<E>(this.entityDAO.get(keyValues));
 	}
 	
 	public long add(E e) {
@@ -44,21 +47,32 @@ public abstract class AbstractEntityService<E extends EntityTemplate> implements
 			this.entityDAO.save(e);
 			return e.getId();
 		} catch (SQLException sqlexc) {
-			return errorCodeCheck(sqlexc, e);		
+			if (isDuplicateKeyError(sqlexc)) {
+				return getUnique(e.uniqueValue()).getId();
+			}
 		} catch (TransactionalException txexc) {
-			return rollbackCheck(txexc, e);
+			if (isDuplicateKeyError(isSQLCauseForRollback(txexc))) {
+				return getUnique(e.uniqueValue()).getId();
+			}
+			return txExc;
 		}
+		return saveExc;
 	}
 	
-	public void update(E e, long id) {
+	public long update(E e) {
 		try {
-			get(id);
 			this.entityDAO.update(e);
+			return e.getId();
 		} catch (SQLException sqlexc) {
-			errorCodeCheck(sqlexc, e);
+			if (isDuplicateKeyError(sqlexc))
+				return getUnique(e.uniqueValue()).getId();
 		} catch (TransactionalException txexc) {
-			rollbackCheck(txexc, e);
+			if (isDuplicateKeyError(isSQLCauseForRollback(txexc))) {
+				return getUnique(e.uniqueValue()).getId();
+			}
+			return txExc;
 		}
+		return saveExc;
 	}
 
 	public E delete(long id) {
@@ -67,32 +81,38 @@ public abstract class AbstractEntityService<E extends EntityTemplate> implements
 		return e;
 	}
 	
-	public List<E> fetch() {
-		return this.entityDAO.getAll();
+	public Set<E> fetch() {
+		return new HashSet<E>(this.entityDAO.getAll());
 	}
 	
-		
-	protected long rollbackCheck(TransactionalException te, EntityTemplate e) {
-		if (te.getCause() instanceof RollbackException) {
-			Throwable cause = te.getCause();
-			while (cause.getCause() != null) {
-				cause = cause.getCause();
+// Een hack voor die gewrapte exceptions	
+	protected static SQLException isSQLCauseForRollback(TransactionalException te) {
+		Throwable cause = te.getCause();
+		while (cause.getCause() != null) {
+			cause = cause.getCause();
+		}
+		if (cause instanceof SQLException) {
+			return (SQLException) cause;
+		}
+		return null;
+	}
+	
+	protected static boolean isDuplicateKeyError(SQLException sqlexc) {
+		try {
+			if (sqlexc.getErrorCode() == duplicateKey) {
+				return true;
 			}
-			SQLException sqlexc = (SQLException) cause;
-			return errorCodeCheck(sqlexc, e);
+		} catch (NullPointerException ne) {
+			// Andere fout
 		}
-		return 0;
+		return false;
 	}
 	
-	protected long errorCodeCheck(SQLException sqlexc, EntityTemplate e) {
-		if (sqlexc.getErrorCode() == duplicateKey) {
-			return this.entityDAO.get(e.uniqueValue()).getId();
-		}
-		return 0;
-	}
-
-
-
+	protected static final int txExc = -2;
+	
+	protected static final int saveExc = 0;
+	
+	
 	protected static final int duplicateKey = 1062;
 
 
@@ -101,5 +121,6 @@ public abstract class AbstractEntityService<E extends EntityTemplate> implements
 	
 	public static long getSerialversionuid() {return serialVersionUID;}
 
-	
+
+		
 }

@@ -1,13 +1,12 @@
 package com.workshop3.model;
 
-import java.util.List;
 import java.util.Set;
 
 import javax.enterprise.context.SessionScoped;
 import javax.inject.*;
 import javax.persistence.*;
 
-import com.workshop3.service.KlantService;
+import static com.workshop3.service.KlantService.*;
 
 @Named
 @SessionScoped
@@ -15,7 +14,7 @@ import com.workshop3.service.KlantService;
 @Table(name="Adres", uniqueConstraints = {
 		@UniqueConstraint(columnNames = {"postcode", "huisnummer", "toevoeging"}, 
 				name = "uniek_adres")})
-public class Adres extends EntityTemplate {
+public class Adres implements EntityIface {
 	
 	@Transient
 	private static final long serialVersionUID = 2L;
@@ -71,23 +70,23 @@ public class Adres extends EntityTemplate {
 	
 	public String getStraatnaam() {return this.straatnaam;}
 	
-	public void setStraatnaam(String straatnaam) {this.straatnaam = KlantService.firstCapital(straatnaam);}
+	public void setStraatnaam(String straatnaam) {this.straatnaam = firstCapital(straatnaam);}
 	
 	public int getHuisnummer() {return this.huisnummer;}
 	
 	public void setHuisnummer(int huisnummer) {this.huisnummer = huisnummer;}
 	
-	public String getToevoeging() {return this.toevoeging == null ? "" : this.toevoeging;}
+	public String getToevoeging() {return this.toevoeging;}
 	
-	public void setToevoeging(String toevoeging) {this.toevoeging = toevoeging == null ? "" : toevoeging;}
+	public void setToevoeging(String toevoeging) {this.toevoeging = toevoeging == null ? "" : trimUpCase(toevoeging);}
 	
 	public String getPostcode() {return this.postcode;}
 	
-	public void setPostcode(String postcode) {this.postcode = postcode.toUpperCase().trim();}
+	public void setPostcode(String postcode) {this.postcode = trimUpCase(postcode);}
 	
 	public String getWoonplaats() {return this.woonplaats;}
 	
-	public void setWoonplaats(String plaats) {this.woonplaats = KlantService.firstCapital(plaats);}
+	public void setWoonplaats(String plaats) {this.woonplaats = firstCapital(plaats);}
 		
 	public Set<Klant> getBewoners() {return this.bewoners;}
 
