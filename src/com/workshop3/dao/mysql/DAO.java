@@ -1,16 +1,18 @@
 package com.workshop3.dao.mysql;
 
 import java.io.Serializable;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.*;
 
 import javax.inject.Inject;
 import javax.persistence.*;
 import javax.transaction.Transactional;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import com.workshop3.dao.DAOIface;
 
-@Transactional(rollbackOn = MySQLIntegrityConstraintViolationException.class)
-public abstract class DAO<E extends Serializable> implements Serializable, com.workshop3.dao.DAOIface<E> {
+
+@Transactional(rollbackOn = SQLIntegrityConstraintViolationException.class)
+public abstract class DAO<E extends Serializable> implements DAOIface<E> {
 
 	private static final long serialVersionUID = 1001L;
 	
@@ -35,7 +37,7 @@ public abstract class DAO<E extends Serializable> implements Serializable, com.w
 
 	
 	@Override
-	public void save(E e) throws RollbackException, MySQLIntegrityConstraintViolationException {
+	public void save(E e) throws RollbackException, SQLIntegrityConstraintViolationException {
 		this.em.persist(e);
 	}
 	
@@ -74,7 +76,7 @@ public abstract class DAO<E extends Serializable> implements Serializable, com.w
 	}
 	
 	@Override
-	public void update(E e) throws RollbackException, MySQLIntegrityConstraintViolationException {
+	public void update(E e) throws RollbackException, SQLIntegrityConstraintViolationException {
 		this.em.merge(e);
 	}
 	

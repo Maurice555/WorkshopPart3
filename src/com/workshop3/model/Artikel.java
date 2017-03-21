@@ -6,6 +6,8 @@ import java.text.NumberFormat;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Named;
 import javax.persistence.*;
+import javax.xml.bind.annotation.*;
+@XmlRootElement
 
 @Named
 @SessionScoped
@@ -16,17 +18,21 @@ public class Artikel implements EntityIface {
 	@Transient
 	private static final long serialVersionUID = 1L;
 	
+	@XmlID
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name = "id")
 	private long id;
 	
+	@XmlElement
 	@Column(name = "naam")
 	private String naam;
 
+	@XmlElement
 	@Column(name = "omschrijving")
 	private String omschrijving;
 
+	@XmlElement
 	@Column(name = "prijs", columnDefinition = "DECIMAL(30,20)")
 	private BigDecimal prijs;
 

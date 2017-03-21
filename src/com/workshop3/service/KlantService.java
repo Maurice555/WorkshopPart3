@@ -12,11 +12,12 @@ import javax.ws.rs.core.MediaType;
 import com.workshop3.dao.mysql.*;
 import com.workshop3.model.*;
 
+@Path("service/klant")
 @SessionScoped
 public class KlantService extends DualEntityService<Klant, Account> {
 	
 	private static final long serialVersionUID = 1L;
-	
+
 	@Inject
 	private KlantDAO klantDAO;
 	
@@ -39,33 +40,42 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	}
 	
 	public static boolean isValidEmail(String mail) {
-		return mail.matches("([(\\w)+\\.-]+)[\\w^_]+@[\\w-\\.]+[\\w^_]+(\\.([\\w^0-9_]){2,4}){1,2}");
+		return mail.matches("([(\\w){2,}\\.-]+)[(\\w){2,}-]@[\\w-\\.]+[\\w^_]+(\\.([\\w^0-9_]){2,4}){1,2}");
+	}
+	
+	public static boolean isValidPostcode(String postcode) {
+		return trimUpCase(postcode).matches("[\\d]{4}[\\w]{2}");
 	}
 	
 	public static String trimUpCase(String postcode) {
 		return postcode.trim().replace(" ", "").toUpperCase();
 	}
-
+	
 	public boolean isKnownEmail(String mail) {
-		try {
-			if (get(mail.toLowerCase()).getId() > 0) { return true; }
-		} catch (NullPointerException ne) {
-			// geen klant gevonden
-		}
+		Klant k = get(mail.toLowerCase());
+		if (k != null && k.getId() > 0) { return true; } 
 		return false;
 	}
 	
 // Custom Klant-zoekmethoden
-	public Klant get(String mail) {
+	@GET @Path("main/email={mail}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Klant get(@PathParam("mail") String mail) {
 		if (isValidEmail(mail)) { return this.klantDAO.get(mail.toLowerCase());	}
 		return get(-3);
 	}
 	
-	public Set<Klant> findByVoorEnAchternaam(String voor, String achter) {
+	@GET @Path("/zoekopnaam/{voor}&{achter}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Klant> findByVoorEnAchternaam(
+			@PathParam("voor") String voor, 
+			@PathParam("achter") String achter) {
 		return new HashSet<Klant>(this.klantDAO.findByVoorEnAchternaam(voor, achter));
 	}
 	
-	public Set<Klant> findByAchternaam(String achter) {
+	@GET @Path("zoekopnaam/{achter}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Klant> findByAchternaam(@PathParam("achter") String achter) {
 		return new HashSet<Klant>(this.klantDAO.findByAchternaam(achter));
 	}
 	
@@ -95,7 +105,9 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return saveExc;
 	}
 	
-	public Adres getAdres(long adresID) {
+	@GET @Path("adres/" + ID)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Adres getAdres(@PathParam("id") long adresID) {
 		return this.adresDAO.get(adresID);
 	}
 	
@@ -103,22 +115,55 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return findByPostcodeAndHuisnummer(uniqueValues[0], Integer.parseInt(uniqueValues[1]), uniqueValues[2]);
 	}
 	
-	public Set<Adres> findByPostcodeAndHuisnummer(String postcode, int huisnummer) {
+	private static final String MetPostcode = "postcode={postcode}";
+	private static final String MetHuisnummer = "huisnummer={huisnummer}";
+	private static final String MetToevoeging = "toevoeging={toevoeging}";
+	private static final String MetStraat = "straat={straat}";
+	private static final String MetPlaats = "plaats={plaats}";
+	private static final String ZoekAdres = "zoek/adres/";
+	private static final String AND = "&";
+	
+	@GET @Path(ZoekAdres + MetPostcode)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Adres> findByPostcode(
+			@PathParam("postcode") String postcode) {
+		return new HashSet<Adres>(this.adresDAO.findByPostcode(postcode));
+	}
+	
+	@GET @Path(ZoekAdres + MetPostcode + AND + MetHuisnummer)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Adres> findByPostcodeAndHuisnummer(
+			@PathParam("postcode") String postcode,
+			@PathParam("huisnummer") int huisnummer) {
 		return new HashSet<Adres>(this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer));
 	}
 	
-	public Adres findByPostcodeAndHuisnummer(String postcode, int huisnummer, String toevoeging) {
+	@GET @Path(ZoekAdres + MetPostcode + AND + MetHuisnummer + AND + MetToevoeging)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Adres findByPostcodeAndHuisnummer(
+			@PathParam("postcode") String postcode, 
+			@PathParam("huisnummer") int huisnummer, 
+			@PathParam("toevoeging") String toevoeging) {
 		for (Adres a : findByPostcodeAndHuisnummer(postcode, huisnummer)) {
 			if (hasEqualToevoeging(a, toevoeging)) { return a; }
 		}
 		return null;
 	}
 
-	public Set<Adres> findByStraatAndPlaats(String straat, String plaats) {
+	@GET @Path(ZoekAdres + MetStraat + AND + MetPlaats)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Adres> findByStraatAndPlaats(
+			@PathParam("straat") String straat, 
+			@PathParam("plaats") String plaats) {
 		return new HashSet<Adres>(this.adresDAO.findByStraat(straat, plaats));
 	}
 	
-	public Set<Adres> findByStraatAndHuisnummer(String straat, int huisnummer, String plaats) {
+	@GET @Path(ZoekAdres + MetStraat + AND + MetHuisnummer + AND + MetPlaats)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Adres> findByStraatAndHuisnummer(
+			@PathParam("straat") String straat, 
+			@PathParam("huisnummer") int huisnummer, 
+			@PathParam("plaats") String plaats) {
 		Set<Adres> adresSet = new HashSet<Adres>();
 		for (Adres a : findByStraatAndPlaats(straat, plaats)) {
 			if (huisnummer == 0 || a.getHuisnummer() == huisnummer) {
@@ -128,7 +173,13 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return adresSet;
 	}
 	
-	public Adres findByStraatAndHuisnummer(String straat, int huisnummer, String toevoeging, String plaats) {
+	@GET @Path(ZoekAdres + MetStraat + AND + MetHuisnummer + AND + MetToevoeging + AND + MetPlaats)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Adres findByStraatAndHuisnummer(
+			@PathParam("straat") String straat, 
+			@PathParam("huisnummer") int huisnummer, 
+			@PathParam("toevoeging") String toevoeging, 
+			@PathParam("plaats") String plaats) {
 		for (Adres a : findByStraatAndHuisnummer(straat, huisnummer, plaats)) {
 			if (hasEqualToevoeging(a, toevoeging)) { return a; }
 		}

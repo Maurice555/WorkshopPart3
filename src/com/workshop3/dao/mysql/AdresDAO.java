@@ -26,6 +26,12 @@ public class AdresDAO extends DAO<Adres> {
 				.getResultList();
 	}
 
+	public List<Adres> findByPostcode(String postcode) {
+		return this.em.createNativeQuery(
+				"select * from Adres where postcode = '" + trimUpCase(postcode) + "'", Adres.class)
+				.getResultList();
+	}
+	
 	public List<Adres> findByPostcodeAndHuisnummer(String postcode, int huisnummer) {
 		return this.em.createNativeQuery(
 				"select * from Adres where postcode = '" + trimUpCase(postcode) + 
@@ -36,6 +42,7 @@ public class AdresDAO extends DAO<Adres> {
 	
 	
 	public static long getSerialversionuid() {return serialVersionUID;}
+
 
 
 		

@@ -7,10 +7,13 @@ import java.util.*;
 
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 
 import com.workshop3.dao.mysql.*;
 import com.workshop3.model.*;
 
+@Path("service/bestelling")
 @SessionScoped
 public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 	
@@ -42,7 +45,10 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		return status;
 	}
 	
-	public String readStatus(long id) {
+	@GET
+	@Path("status/" + ID)
+	@Produces(MediaType.APPLICATION_JSON)
+	public String readStatus(@PathParam("id") long id) {
 		switch (getStatus(id)) {
 			case 0:
 				return "Onbetaald";
@@ -75,7 +81,10 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		return new HashSet<Bestelling>(this.bestelDAO.findByDateAndPeriod(LocalDate.now().minus(period), period));
 	}
 	
-	public Set<Bestelling> findByKlant(long klantID) {
+	@GET
+	@Path("/zoek/klant" + ID)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Bestelling> findByKlant(@PathParam("id") long klantID) {
 		return new HashSet<Bestelling>(this.bestelDAO.getEm().createNativeQuery(
 				"select * from Bestelling where klantId = " + klantID, Bestelling.class)
 				.getResultList());
@@ -87,6 +96,8 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		return bestellingen;
 	}
 	
+	@GET @Path("zoek/klant/bestelling" + ID)
+	@Produces(MediaType.APPLICATION_JSON)
 	public long getKlantByBestelling(long id) {
 		return get(id).getKlant().getId();
 	}

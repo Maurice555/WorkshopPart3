@@ -1,9 +1,10 @@
 package com.workshop3.dao;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
 
-public interface DAOIface<E extends java.io.Serializable> {
+public interface DAOIface<E extends Serializable> extends Serializable{
 	
 	void save(E e) throws SQLException;
 	E get(long id);

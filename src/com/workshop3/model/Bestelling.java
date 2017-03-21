@@ -7,6 +7,8 @@ import java.util.*;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Named;
 import javax.persistence.*;
+import javax.xml.bind.annotation.*;
+@XmlRootElement
 
 @Named
 @SessionScoped
@@ -17,25 +19,31 @@ public class Bestelling implements EntityIface {
 	@Transient
 	private static final long serialVersionUID = 1L;
 	
+	@XmlID
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private long id;
 	
+	@XmlIDREF
 	@ManyToOne(cascade = CascadeType.MERGE)
 	@JoinColumn(name = "klantId", referencedColumnName = "id")
 	private Klant klant;
 	
+	@XmlElement
+	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "datum")
 	private Date datum;
 	
+	@XmlElementWrapper(name = "status")
 	@ElementCollection
 	@CollectionTable(name = "bestellingHasStatus",
 			joinColumns = @JoinColumn(name = "bestellingId"))
-	@Column(name = "datum")
+	@Temporal(TemporalType.TIMESTAMP) @Column(name = "datum")
 	@MapKeyColumn(name = "status")
 	private Map<Integer, Date> stati;
 	
+	@XmlElementWrapper(name = "artikelen")
 	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(name = "bestellingHasArtikel",
 			joinColumns = @JoinColumn(name = "bestellingId"))
@@ -88,11 +96,8 @@ public class Bestelling implements EntityIface {
 	public void removeArtikel(Artikel artikel, int aantal) {
 		if (this.artikelen.containsKey(artikel)) {
 			int newAantal = this.artikelen.get(artikel) - aantal;
-			if (newAantal > 0) {
-				this.artikelen.put(artikel, newAantal);
-			} else {
-				this.artikelen.remove(artikel);
-			}
+			if (newAantal > 0) { this.artikelen.put(artikel, newAantal); }
+			else { this.artikelen.remove(artikel); }
 		}
 	}
 	
@@ -113,7 +118,7 @@ public class Bestelling implements EntityIface {
 	
 	@Override
 	public String toString() {
-		return "Bestellingnummer#: " + getId() + " klantID: " + getKlant().getId() + " " + getDatum() + 
+		return "Bestellingnummer#: " + getId() + " " + getKlant() + " " + getDatum() + 
 				" ArtikelLijst: " + getArtikelen() + " " + NumberFormat.getCurrencyInstance().format(totaalPrijs());
 	}
 

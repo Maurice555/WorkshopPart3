@@ -1,13 +1,15 @@
 package com.workshop3.model;
 
+import java.util.*;
+
 import javax.enterprise.context.SessionScoped;
 import javax.inject.*;
 import javax.persistence.*;
 import javax.validation.constraints.*;
+import javax.xml.bind.annotation.*;
 
-import com.workshop3.service.KlantService;
-
-import java.util.*;
+import static com.workshop3.service.KlantService.*;
+@XmlRootElement
 
 @Named
 @SessionScoped
@@ -18,28 +20,35 @@ public class Klant implements EntityIface {
 	@Transient
 	private static final long serialVersionUID = 1L;
 	
+	@XmlID
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name = "id")
 	private long id;
 	
+	@XmlElement
 	@Column(name = "voornaam")
 	private String voornaam;
 	
+	@XmlElement
 	@Column(name = "tussenvoegsel")
 	private String tussenvoegsel;
 	
+	@XmlElement
 	@Column(name = "achternaam")
 	private String achternaam;
 	
+	@XmlElement
 	@NotNull
 	@Column(name = "email", unique = true)
 	private String email;
 
+	@XmlElement
 	@ManyToOne(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
 	@JoinColumn(name = "adresId")
 	private Adres adres;
 	
+	@XmlElementWrapper(name = "bezorgadres")
 	@ManyToMany(cascade = CascadeType.MERGE)
 	@JoinTable(name = "bezorgAdres",
 			joinColumns = @JoinColumn(name = "klantId"),
@@ -81,7 +90,7 @@ public class Klant implements EntityIface {
 
 	public String getVoornaam() {return this.voornaam;}
 	
-	public void setVoornaam(String voornaam) {this.voornaam = KlantService.firstCapital(voornaam);}
+	public void setVoornaam(String voornaam) {this.voornaam = firstCapital(voornaam);}
 
 	public String getTussenvoegsel() {return this.tussenvoegsel != null ? this.tussenvoegsel + " " : "";}
 	
@@ -89,7 +98,7 @@ public class Klant implements EntityIface {
 
 	public String getAchternaam() {return this.achternaam;}
 	
-	public void setAchternaam(String achternaam) {this.achternaam = KlantService.firstCapital(achternaam);}
+	public void setAchternaam(String achternaam) {this.achternaam = firstCapital(achternaam);}
 	
 	public String getEmail() {return this.email;}
 	

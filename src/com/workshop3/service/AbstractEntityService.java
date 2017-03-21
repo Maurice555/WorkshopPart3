@@ -7,6 +7,8 @@ import java.util.*;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.transaction.TransactionalException;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 
 import com.workshop3.dao.DAOIface;
 import com.workshop3.model.EntityIface;
@@ -16,10 +18,16 @@ public abstract class AbstractEntityService<E extends EntityIface> implements Se
 
 	private static final long serialVersionUID = 1L;
 	
+	protected static final String DATE = "{datum : [\\d]{4}-[\\d]{2}-[\\d]{2}}";
+	
+	protected static final String PERIOD = "{period : [\\d]+(,[ \\d]){0,3}}";
+		
+	protected static final String ID = "Id={id}";
+	
+	
 	@Inject
 	private DAOIface<E> entityDAO;
 	
-	@Inject
 	public AbstractEntityService(DAOIface<E> dao) {
 		this.entityDAO = dao;
 	}
@@ -30,7 +38,10 @@ public abstract class AbstractEntityService<E extends EntityIface> implements Se
 	public void setDAO(DAOIface<E> dao) {this.entityDAO = dao;}
 	
 	
-	public E get(long id) {
+	@GET
+	@Path("main/" + ID)
+	@Produces(MediaType.APPLICATION_JSON)
+	public E get(@PathParam("id") long id) {
 		return this.entityDAO.get(id);
 	}
 	
@@ -81,9 +92,13 @@ public abstract class AbstractEntityService<E extends EntityIface> implements Se
 		return e;
 	}
 	
+	@GET
+	@Path("main/fetch")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Set<E> fetch() {
 		return new HashSet<E>(this.entityDAO.getAll());
 	}
+	
 	
 // Een hack voor die gewrapte exceptions	
 	protected static SQLException isSQLCauseForRollback(TransactionalException te) {
@@ -92,20 +107,13 @@ public abstract class AbstractEntityService<E extends EntityIface> implements Se
 			cause = cause.getCause();
 		}
 		if (cause instanceof SQLException) {
-			return (SQLException) cause;
+			return (SQLException) cause; 
 		}
 		return null;
 	}
 	
 	protected static boolean isDuplicateKeyError(SQLException sqlexc) {
-		try {
-			if (sqlexc.getErrorCode() == duplicateKey) {
-				return true;
-			}
-		} catch (NullPointerException ne) {
-			// Andere fout
-		}
-		return false;
+		return sqlexc != null && sqlexc.getErrorCode() == duplicateKey;
 	}
 	
 	protected static final int txExc = -2;

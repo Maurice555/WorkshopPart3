@@ -5,6 +5,8 @@ import java.util.Date;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Named;
 import javax.persistence.*;
+import javax.xml.bind.annotation.*;
+@XmlRootElement
 
 @Named
 @SessionScoped
@@ -15,26 +17,31 @@ public class Account implements EntityIface {
 	@Transient
 	private static final long serialVersionUID = 1L;
 	
+	@XmlID
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private long id;
 	
+	@XmlElement
 	@Temporal(TemporalType.DATE)
 	@Column(name = "datum")
 	private Date datum;
 	
+	@XmlIDREF
 	@ManyToOne
 	@JoinColumn(name = "klantId")
 	private Klant klant;
 	
+	@XmlElement
 	@Column(name = "naam", unique = true)
 	private String login;
 	
+	@XmlElement
 	@Column(name = "password")
 	private String pass;
 	
-	public Account() {}
+	public Account() { this(null); }
 	
 	public Account(Klant klant) {
 		this.klant = klant;

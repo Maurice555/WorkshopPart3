@@ -5,8 +5,10 @@ import java.util.Set;
 import javax.enterprise.context.SessionScoped;
 import javax.inject.*;
 import javax.persistence.*;
+import javax.xml.bind.annotation.*;
 
 import static com.workshop3.service.KlantService.*;
+@XmlRootElement
 
 @Named
 @SessionScoped
@@ -19,29 +21,37 @@ public class Adres implements EntityIface {
 	@Transient
 	private static final long serialVersionUID = 2L;
 	
+	@XmlID
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private long id;
 	
+	@XmlElement
 	@Column(name = "straatnaam")
 	private String straatnaam;
 	
+	@XmlElement
 	@Column(name = "huisnummer")
 	private int huisnummer;
 	
+	@XmlElement
 	@Column(name = "toevoeging")
 	private String toevoeging;
 	
+	@XmlElement
 	@Column(name = "postcode")
 	private String postcode;
 	
+	@XmlElement
 	@Column(name = "woonplaats")
 	private String woonplaats;
 	
+	@XmlIDREF
 	@OneToMany(mappedBy = "adres")	
 	private Set<Klant> bewoners;
 	
+	@XmlIDREF
 	@ManyToMany
 	@JoinTable(name = "bezorgAdres",
 			joinColumns = @JoinColumn(name = "adresId"),
