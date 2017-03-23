@@ -10,7 +10,6 @@ import com.workshop3.model.*;
 import com.workshop3.service.KlantService;
 
 @Named
-@ManagedBean
 @SessionScoped
 public class KlantView implements java.io.Serializable {
 	
@@ -28,14 +27,14 @@ public class KlantView implements java.io.Serializable {
 	@Inject
 	private KlantService service;
 
-	public static String result = "SUCCESS";
+	public static String result = "InitialValue";
 	
 	public KlantView() {}
 	
 	
 	public Klant getKlant() {return this.klant;}
 	
-	public void setKlant(Klant k) {this.klant = k; this.adres = this.klant.getAdres();}
+	public void setKlant(Klant k) {this.klant = k;}
 	
 	public Adres getAdres() {return this.adres;}
 	
@@ -43,7 +42,7 @@ public class KlantView implements java.io.Serializable {
 
 	public Account getAccount() {return this.account;}
 
-	public void setAccount(Account act) {this.account = act; setKlant(this.account.getKlant());}
+	public void setAccount(Account act) {this.account = act;}
 
 	public static String getResult() {return result;}
 	
@@ -97,6 +96,8 @@ public class KlantView implements java.io.Serializable {
 		Account acct = this.service.getUniqueSimple(new String[] {this.account.getLogin()});
 		if (acct.getPass().equals(this.account.getPass())) {
 			setAccount(acct);
+			setKlant(acct.getKlant());
+			setAdres(acct.getKlant().getAdres());
 			return acct.getId();
 		}
 		return -1;

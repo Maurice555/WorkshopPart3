@@ -26,5 +26,11 @@ public class BestellingDAO extends DAO<Bestelling> {
 				"' and datum < '" + datum.plus(period) + "'", Bestelling.class)
 				.getResultList();
 	}
+
+	public List<Bestelling> getByKlant(long klantID) {
+		return this.getEm().createNativeQuery(
+				"select * from Bestelling where klantId = " + klantID, Bestelling.class)
+				.getResultList();
+	}
 	
 }

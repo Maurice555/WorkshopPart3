@@ -13,7 +13,7 @@ public class KlantDAO extends DAO<Klant> {
 
 	private static final long serialVersionUID = 112L;
 	
-	@PersistenceContext(unitName="CustomER")
+	@PersistenceContext(unitName = "CustomER")
 	private EntityManager em;
 	
 	public KlantDAO() { super(Klant.class); }

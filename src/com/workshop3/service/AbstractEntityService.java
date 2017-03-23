@@ -18,12 +18,10 @@ public abstract class AbstractEntityService<E extends EntityIface> implements Se
 
 	private static final long serialVersionUID = 1L;
 	
-	protected static final String DATE = "{datum : [\\d]{4}-[\\d]{2}-[\\d]{2}}";
-	
-	protected static final String PERIOD = "{period : [\\d]+(,[ \\d]){0,3}}";
-		
-	protected static final String ID = "Id={id}";
-	
+	protected static final String DATUM = "datum={datum : [\\d]{4}-[\\d]{2}-[\\d]{2}}";
+	protected static final String PERIOD = "periode={period : P([\\d]+[YMWD])+}";
+	protected static final String ID = "Id={id : [\\d]+}";
+	protected static final String AND = "&";
 	
 	@Inject
 	private DAOIface<E> entityDAO;
@@ -38,8 +36,7 @@ public abstract class AbstractEntityService<E extends EntityIface> implements Se
 	public void setDAO(DAOIface<E> dao) {this.entityDAO = dao;}
 	
 	
-	@GET
-	@Path("main/" + ID)
+	@GET @Path(ID)
 	@Produces(MediaType.APPLICATION_JSON)
 	public E get(@PathParam("id") long id) {
 		return this.entityDAO.get(id);
@@ -92,14 +89,26 @@ public abstract class AbstractEntityService<E extends EntityIface> implements Se
 		return e;
 	}
 	
-	@GET
-	@Path("main/fetch")
+	@GET @Path("fetch")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Set<E> fetch() {
 		return new HashSet<E>(this.entityDAO.getAll());
 	}
 	
-	
+	protected static Map<String, String> getKeyParamPairs(String uriQuery) {
+		Map<String, String> uriParams = new LinkedHashMap<String, String>();
+		for (String s : uriQuery.split("[&]")) {
+			String[] keyParamPair = s.split("=");
+			switch (keyParamPair.length) {
+				case 1: 
+					uriParams.put(keyParamPair[0], ""); break;
+				default: 
+					uriParams.put(keyParamPair[0], keyParamPair[1]); break;				
+			}
+		}
+		return uriParams;
+	}
+		
 // Een hack voor die gewrapte exceptions	
 	protected static SQLException isSQLCauseForRollback(TransactionalException te) {
 		Throwable cause = te.getCause();
@@ -123,7 +132,7 @@ public abstract class AbstractEntityService<E extends EntityIface> implements Se
 	
 	protected static final int duplicateKey = 1062;
 
-
+	
 
 	
 	

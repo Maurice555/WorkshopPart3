@@ -3,6 +3,7 @@ package com.workshop3.view;
 import java.util.*;
 
 import javax.enterprise.context.*;
+import javax.faces.bean.ManagedBean;
 import javax.inject.*;
 
 import com.workshop3.model.*;

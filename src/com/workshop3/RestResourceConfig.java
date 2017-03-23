@@ -1,8 +1,7 @@
 package com.workshop3;
 
-
 import javax.annotation.Resource;
-import javax.enterprise.context.*;
+import javax.enterprise.context.Dependent;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.ext.MessageBodyWriter;
 
@@ -22,6 +21,7 @@ public class RestResourceConfig extends ResourceConfig implements java.io.Serial
 		
 	public RestResourceConfig() {
 		packages("com.workshop3.model;com.workshop3.service");
+		this.register(com.workshop3.manager.KlantManager.class);
 	}
 	
 	

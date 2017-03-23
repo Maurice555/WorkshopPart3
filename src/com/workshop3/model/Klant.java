@@ -22,7 +22,7 @@ public class Klant implements EntityIface {
 	
 	@XmlID
 	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private long id;
 	
@@ -48,7 +48,6 @@ public class Klant implements EntityIface {
 	@JoinColumn(name = "adresId")
 	private Adres adres;
 	
-	@XmlElementWrapper(name = "bezorgadres")
 	@ManyToMany(cascade = CascadeType.MERGE)
 	@JoinTable(name = "bezorgAdres",
 			joinColumns = @JoinColumn(name = "klantId"),
@@ -73,13 +72,12 @@ public class Klant implements EntityIface {
 	
 	public Klant(String voor, String tussen, String achter, String mail){
 		setVoornaam(voor);
-		this.tussenvoegsel = tussen;
+		setTussenvoegsel(tussen);
 		setAchternaam(achter);
 		setEmail(mail);
-		this.adres = null;
 		this.bestellingen = new HashSet<Bestelling>();
 		this.accounts = new HashSet<Account>();
-		this.bezorgAdressen = null;
+		this.bezorgAdressen = new HashSet<Adres>();
 	}
 	
 	@Override
@@ -90,15 +88,15 @@ public class Klant implements EntityIface {
 
 	public String getVoornaam() {return this.voornaam;}
 	
-	public void setVoornaam(String voornaam) {this.voornaam = firstCapital(voornaam);}
+	public void setVoornaam(String voornaam) {this.voornaam = firstCapital(voornaam.trim());}
 
 	public String getTussenvoegsel() {return this.tussenvoegsel != null ? this.tussenvoegsel + " " : "";}
 	
-	public void setTussenvoegsel(String tussenvoegsel) {this.tussenvoegsel = tussenvoegsel;}
+	public void setTussenvoegsel(String tussenvoegsel) {this.tussenvoegsel = tussenvoegsel.trim();}
 
 	public String getAchternaam() {return this.achternaam;}
 	
-	public void setAchternaam(String achternaam) {this.achternaam = firstCapital(achternaam);}
+	public void setAchternaam(String achternaam) {this.achternaam = firstCapital(achternaam.trim());}
 	
 	public String getEmail() {return this.email;}
 	

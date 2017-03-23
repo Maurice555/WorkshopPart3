@@ -58,14 +58,14 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	}
 	
 // Custom Klant-zoekmethoden
-	@GET @Path("main/email={mail}")
+	@GET @Path("email={mail}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Klant get(@PathParam("mail") String mail) {
 		if (isValidEmail(mail)) { return this.klantDAO.get(mail.toLowerCase());	}
 		return get(-3);
 	}
 	
-	@GET @Path("/zoekopnaam/{voor}&{achter}")
+	@GET @Path("/zoek/{voor}&{achter}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Set<Klant> findByVoorEnAchternaam(
 			@PathParam("voor") String voor, 
@@ -73,7 +73,7 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return new HashSet<Klant>(this.klantDAO.findByVoorEnAchternaam(voor, achter));
 	}
 	
-	@GET @Path("zoekopnaam/{achter}")
+	@GET @Path("zoek/{achter}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Set<Klant> findByAchternaam(@PathParam("achter") String achter) {
 		return new HashSet<Klant>(this.klantDAO.findByAchternaam(achter));
@@ -115,13 +115,19 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return findByPostcodeAndHuisnummer(uniqueValues[0], Integer.parseInt(uniqueValues[1]), uniqueValues[2]);
 	}
 	
+	
+	@GET @Path("zoek/adres/{query}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Adres> findAdres(@PathParam("query") String query) {
+		return new HashSet<Adres>(this.adresDAO.get(getKeyParamPairs(query)));
+	}
+	
+	private static final String ZoekAdres = "zoek/adres/";
 	private static final String MetPostcode = "postcode={postcode}";
 	private static final String MetHuisnummer = "huisnummer={huisnummer}";
 	private static final String MetToevoeging = "toevoeging={toevoeging}";
 	private static final String MetStraat = "straat={straat}";
 	private static final String MetPlaats = "plaats={plaats}";
-	private static final String ZoekAdres = "zoek/adres/";
-	private static final String AND = "&";
 	
 	@GET @Path(ZoekAdres + MetPostcode)
 	@Produces(MediaType.APPLICATION_JSON)
@@ -187,11 +193,13 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	}
 
 	public static boolean hasEqualToevoeging(Adres a, String toevoeging) {
-		return a.getToevoeging().trim().equalsIgnoreCase(toevoeging.trim());
+		return trimUpCase(a.getToevoeging()).equals(trimUpCase(toevoeging));
 	}
 
 // Accountbeheer <Simple>
-	public Set<Account> getAccounts(long id) {
+	@GET @Path("simple/klant" + ID)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Account> getAccounts(@PathParam("id") long id) {
 		return get(id).getAccounts();
 	}
 	

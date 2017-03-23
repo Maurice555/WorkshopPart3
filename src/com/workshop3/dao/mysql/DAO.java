@@ -45,14 +45,14 @@ public abstract class DAO<E extends Serializable> implements DAOIface<E> {
 	public E get(long id) {
 		return this.em.find(this.entity, id);	
 	}
-	//default behaviour for returning single result.. in this case with long id
+	//default behaviour for returning single result.. in this case with long id.. meant for overriding
 	@Override
 	public E getUnique(String[] uniqueValues) {
 		return get(Long.parseLong(uniqueValues[0]));
 	}
 	
 	@Override
-	public List<E> get(Map<String, String> keyValues) {
+	public List<E> getAll(Map<String, String> keyValues) {
 		List<E> rows = new ArrayList<E>();
 		for (Map.Entry<String, String> entry : keyValues.entrySet()) {
 			rows.addAll(this.em.createNativeQuery(
@@ -61,6 +61,15 @@ public abstract class DAO<E extends Serializable> implements DAOIface<E> {
 					.getResultList());
 		}
 		return rows;
+	}
+
+	@Override
+	public List<E> get(Map<String, String> keyValues) {
+		StringBuilder query = new StringBuilder("select * from " + this.entity.getSimpleName() + " where ");
+		for (Map.Entry<String, String> entry : keyValues.entrySet()) {
+			query.append(entry.getKey() + " = '" + entry.getValue() + "' and ");
+		}
+		return this.em.createNativeQuery(query.toString().substring(0, query.length() -4), this.entity).getResultList();
 	}
 	
 	@Override

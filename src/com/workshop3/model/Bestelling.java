@@ -121,8 +121,18 @@ public class Bestelling implements EntityIface {
 		return "Bestellingnummer#: " + getId() + " " + getKlant() + " " + getDatum() + 
 				" ArtikelLijst: " + getArtikelen() + " " + NumberFormat.getCurrencyInstance().format(totaalPrijs());
 	}
-
 	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof Bestelling) { return ((Bestelling)o).getId() == getId(); }
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return (int)getId();
+	}
+
 	public static long getSerialversionuid() {return serialVersionUID;}
 
 	
