@@ -31,13 +31,10 @@ public abstract class DualEntityService<E extends EntityIface, S extends EntityI
 	
 	public void setSimpleDAO(DAOIface<S> dao2) {this.simpleDAO = dao2;}
 	
+	
 	@GET @Path("simple/" + ID)
 	@Produces(MediaType.APPLICATION_JSON)
-	public S getSimple(@PathParam("id") String rawID) {
-		return getSimple(Long.parseLong(rawID));
-	}
-	
-	public S getSimple(long id) {
+	public S getSimple(@PathParam("id") long id) {
 		return this.simpleDAO.get(id);
 	}
 	

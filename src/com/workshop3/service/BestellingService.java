@@ -2,7 +2,6 @@ package com.workshop3.service;
 
 import java.math.BigDecimal;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import javax.enterprise.context.SessionScoped;
@@ -27,7 +26,8 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 	public BestellingService() { super(new BestellingDAO(), new ArtikelDAO()); }
 	
 	
-	public void statusUpdate(long id, int status) {
+	@PUT @Path("update/" + ID + "&status={status : [\\d]{1}}") // 405 Method Not Allowed
+	public void statusUpdate(@PathParam("id") long id, @PathParam("status") int status) {
 		Bestelling b = get(id);
 		b.updateStatus(status);
 		update(b);
@@ -58,22 +58,16 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		}
 	}
 	
-//	@GET @Path("zoek/" + DATUM) // is nog geen LocalDate object
-//	@Produces(MediaType.APPLICATION_JSON)
-	public Set<Bestelling> findByDate(LocalDate datum) {
-		return new HashSet<Bestelling>(this.bestelDAO.findByDateAndPeriod(datum, Period.ofDays(1)));
+	@GET @Path("zoek/{query}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Bestelling> findByDateAndPeriod(@PathParam("query") String query) {
+		if (query.matches("all.*")) { return fetch(); }
+		Map<String, Object> quantities = getQuantities(getParamValuePairs(query));
+		return findByDateAndPeriod(getBeginDate(quantities), getPeriod(quantities));		
 	}
 	
 	public Set<Bestelling> findByDateAndPeriod(LocalDate beginDatum, Period p) {
 		return new HashSet<Bestelling>(this.bestelDAO.findByDateAndPeriod(beginDatum, p));
-	}
-	
-	public Set<Bestelling> findByDate(LocalDate beginDatum, LocalDate eindDatum) {
-		return new HashSet<Bestelling>(this.bestelDAO.findByDateAndPeriod(beginDatum, beginDatum.until(eindDatum)));
-	}
-	
-	public Set<Bestelling> findByLatestPeriod(Period period) {
-		return new HashSet<Bestelling>(this.bestelDAO.findByDateAndPeriod(LocalDate.now().minus(period), period));
 	}
 	
 	@GET @Path("/zoek/klant" + ID)
@@ -82,8 +76,12 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		return new HashSet<Bestelling>(this.bestelDAO.getByKlant(klantID));
 	}
 	
-	public Set<Bestelling> findByKlantAndDate(long klantID, LocalDate datum) {
-		Set<Bestelling> bestellingen = new HashSet<Bestelling>(findByDate(datum));
+	@GET @Path("zoek/klant" + ID + "&{temporalType}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Bestelling> findByKlantAndDate(
+			@PathParam("id") long klantID, 
+			@PathParam("temporalType") String temporalType) {
+		Set<Bestelling> bestellingen = findByDateAndPeriod(temporalType);
 		bestellingen.retainAll(findByKlant(klantID));
 		return bestellingen;
 	}
@@ -93,7 +91,13 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 	public long getKlantByBestelling(@PathParam("id") long id) {
 		return get(id).getKlant().getId();
 	}
-		
+	
+	@GET @Path("artikelteller/artikel" + ID + "&{temporalType}")
+	@Produces(MediaType.TEXT_PLAIN)
+	public int artikelCount(@PathParam("id") long id, @PathParam("temporalType") String temporal) {
+		return artikelCount(getSimple(id), findByDateAndPeriod(temporal));
+	}
+	
 	public static int artikelCount(Artikel artikel, Set<Bestelling> bestellingen) {
 		int amountSold = 0;
 		for (Bestelling b : bestellingen) {
@@ -106,32 +110,16 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		return amountSold;
 	}
 	
-	@GET 
-	@Path("verkoopcijfers/{query}") // {method}(&[("+ PERIOD +")(minimale_status={minStatus})(minimale_verandering={minChange})])*")
+	@GET @Path("verkoopcijfers/{query}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String salesProgress(@PathParam("query") String query) {
-		Map<String, String> uriParams = getKeyParamPairs(query);
-		int change = uriParams.containsKey("minimale_verandering") ? Integer.parseInt(uriParams.get("minimale_verandering")) : 1;
-		Map<String, Number> salesValues = new LinkedHashMap<String, Number>();
-		if (uriParams.containsKey("alle")) {
-			Set<Bestelling> all = fetch();
-			salesValues.put("Waarde van alle bestellingen", salesWorth(all));
-			salesValues.putAll(statusProgress(all, change));
-		} else if (uriParams.containsKey("periode")) {
-			Period p = Period.parse(uriParams.get("periode"));
-			if ( ! uriParams.containsKey("minimale_status")) {
-				Set<Bestelling> latest = findByLatestPeriod(p);
-				salesValues.put("Waarde van de bestellingen van de laatste " + p.getMonths() + " maanden en " + 
-				p.getDays() + " dagen", salesWorth(latest));
-				salesValues.putAll(statusProgress(latest, change));
-			} else {
-				int minStatus = Integer.parseInt(uriParams.get("minimale_status"));
-				Set<Bestelling> latestStatChange = findByStatus(p, minStatus);
-				salesValues.put("Waarde van de bestellingen die met " + change + " veranderd zijn in status"
-						, salesWorth(latestStatChange));
-				salesValues.putAll(statusProgress(latestStatChange, change + minStatus));
-			}
-		}
+	public String salesProgress(@PathParam("query") String temporalQuery) {
+		return salesProgress(findByDateAndPeriod(temporalQuery));
+	}	
+	
+	public static String salesProgress(Set<Bestelling> bestellingen) {
+		Map<String, Object> salesValues = new LinkedHashMap<String, Object>();
+		salesValues.put("Waarde van alle bestellingen", salesWorth(bestellingen));
+		salesValues.putAll(statusProgress(bestellingen));
 		return salesValues.toString();
 	}
 	
@@ -147,14 +135,17 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		return turnover;
 	}
 	
-	public static Map<String, Number> statusProgress(Set<Bestelling> bestellingen, int minChange) {
+	public static Map<String, Object> statusProgress(Set<Bestelling> bestellingen) {
 		int totaalAantal, totaalVerandering, updates, changed, progress, prev;
 		totaalAantal = totaalVerandering = updates = changed = progress = prev = 0;
+		Date from, until; until = new Date(0); from = new Date();
 		for (Bestelling b : bestellingen) {
-			for (int i = 0; i < MaxNumOfStati; i++) {
-				if (b.getStati().containsKey(i + minChange)) {
-					progress = i + minChange;
-					if (progress > 0) updates++;
+			if (b.getDatum().compareTo(from) < 0) { from = b.getDatum(); }
+			if (b.getDatum().compareTo(until) > 0) { until = b.getDatum(); }
+			for (int i = 1; i < MaxNumOfStati; i++) {
+				if (b.getStati().containsKey(i)) {
+					progress = i;
+					updates++;
 				}
 			}
 			if (updates > prev) {prev = updates; changed++;}
@@ -163,31 +154,39 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		}
 		double percentageChanged = changed * 100.0 / totaalAantal;
 		double avgProg = totaalVerandering * 1.0 / changed;
-		Map<String, Number> progression = new LinkedHashMap<String, Number>();
+		Map<String, Object> progression = new LinkedHashMap<String, Object>();
+		progression.put("Bestellingen geteld vanaf", from);
+		progression.put("Bestellingen geteld tot", until);
 		progression.put("Aantal getelde bestellingen", totaalAantal);
-		progression.put("Percentage met minimale (" + minChange + ") progressie", percentageChanged);
-		progression.put("Aantal bestellingen met minimale progressie", changed);
-		progression.put("Aantal voldoende statusveranderingen", updates);
-		progression.put("Totale waarde van de voldoende statusveranderingen", totaalVerandering);
-		progression.put("Gemiddelde progressie bij voldoende verandering", avgProg);
+		progression.put("Percentage met status groter dan 0", percentageChanged);
+		progression.put("Aantal bestellingen status groter dan 0", changed);
+		progression.put("Aantal statusveranderingen", updates);
+		progression.put("Totale waarde van de statusveranderingen", totaalVerandering);
+		progression.put("Gemiddelde progressie", avgProg);
 		return  progression;
 	}
 	
-	public Set<Bestelling> findByStatus(Period p, int minStatus) {
+	@GET @Path("zoek/metstatus/{query}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Bestelling> findFromStatusTable(@PathParam("query") String query) {
+		Map<String, Object> quantities = getQuantities(getParamValuePairs(query));
+		return findFromStatusTable(getBeginDate(quantities), getPeriod(quantities));
+	}
+	
+	public Set<Bestelling> findFromStatusTable(LocalDate d, Period p) {
 		return new HashSet<Bestelling>(this.bestelDAO.getEm().createNativeQuery(
-				"select * from Bestelling inner join bestellingHasStatus on bestellingHasStatus.datum > '" + 
-				LocalDate.now().minus(p).format(DateTimeFormatter.ISO_DATE)	+ 
-				"' and bestellingHasStatus.status > " + minStatus + 
-				" and Bestelling.id = bestellingHasStatus.bestellingId", Bestelling.class)
+				"select * from Bestelling inner join bestellingHasStatus "
+				+ "on bestellingHasStatus.datum > '" + d +
+				"' and bestellingHasStatus.datum < '" + d.plus(p.plusDays(1)) +
+				"' and Bestelling.id = bestellingHasStatus.bestellingId", Bestelling.class)
 				.getResultList());
 	}
 	
 	
 	
-
 	public static long getSerialversionuid() {return serialVersionUID;}
 
-	
-	
+		
 	
 }
+

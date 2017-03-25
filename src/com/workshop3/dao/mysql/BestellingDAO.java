@@ -23,7 +23,7 @@ public class BestellingDAO extends DAO<Bestelling> {
 	public List<Bestelling> findByDateAndPeriod(LocalDate datum, Period period) {
 		return this.em.createNativeQuery(
 				"select * from Bestelling where datum > '" + datum + 
-				"' and datum < '" + datum.plus(period) + "'", Bestelling.class)
+				"' and datum <= '" + datum.plus(period.plusDays(1)) + "'", Bestelling.class)
 				.getResultList();
 	}
 

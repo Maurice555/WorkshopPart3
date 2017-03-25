@@ -52,9 +52,9 @@ public abstract class DAO<E extends Serializable> implements DAOIface<E> {
 	}
 	
 	@Override
-	public List<E> getAll(Map<String, String> keyValues) {
+	public List<E> getAll(Map<String, String> paramValues) {
 		List<E> rows = new ArrayList<E>();
-		for (Map.Entry<String, String> entry : keyValues.entrySet()) {
+		for (Map.Entry<String, String> entry : paramValues.entrySet()) {
 			rows.addAll(this.em.createNativeQuery(
 					"select * from " + this.entity.getSimpleName() + " where " + entry.getKey() + 
 					" = '" + entry.getValue() + "'", this.entity)
@@ -64,9 +64,9 @@ public abstract class DAO<E extends Serializable> implements DAOIface<E> {
 	}
 
 	@Override
-	public List<E> get(Map<String, String> keyValues) {
+	public List<E> get(Map<String, String> paramValues) {
 		StringBuilder query = new StringBuilder("select * from " + this.entity.getSimpleName() + " where ");
-		for (Map.Entry<String, String> entry : keyValues.entrySet()) {
+		for (Map.Entry<String, String> entry : paramValues.entrySet()) {
 			query.append(entry.getKey() + " = '" + entry.getValue() + "' and ");
 		}
 		return this.em.createNativeQuery(query.toString().substring(0, query.length() -4), this.entity).getResultList();

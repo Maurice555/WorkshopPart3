@@ -24,31 +24,23 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	@Inject
 	private AdresDAO adresDAO;
 	
-	private BestellingService bestelService;
-	
 	public KlantService() { super(new KlantDAO(), new AccountDAO()); }
 
 	
-	public BestellingService getBestelService() {return this.bestelService;}
-	
-	@Inject
-	public void setBestelService(BestellingService bestelService) {this.bestelService = bestelService;}
-
-
 	public static String firstCapital(String s){
 		return s.trim().replace(s.substring(0, 1), s.substring(0, 1).toUpperCase());
 	}
 	
+	public static String trimUpCase(String postcode) {
+		return postcode.trim().replace(" ", "").toUpperCase();
+	}
+	
 	public static boolean isValidEmail(String mail) {
-		return mail.matches("([(\\w){2,}\\.-]+)[(\\w){2,}-]@[\\w-\\.]+[\\w^_]+(\\.([\\w^0-9_]){2,4}){1,2}");
+		return mail.matches("[\\w]{3,}([\\w\\.-](\\w){3,})*@[\\w]{3,}([\\w\\.-][\\w^_]+)*(\\.([\\w^0-9_]){2,4}){1,2}");
 	}
 	
 	public static boolean isValidPostcode(String postcode) {
-		return trimUpCase(postcode).matches("[\\d]{4}[\\w]{2}");
-	}
-	
-	public static String trimUpCase(String postcode) {
-		return postcode.trim().replace(" ", "").toUpperCase();
+		return trimUpCase(postcode).matches("[\\d]{4}[A-Z]{2}");
 	}
 	
 	public boolean isKnownEmail(String mail) {
@@ -81,8 +73,7 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	
 	public Set<Klant> findKlantByAdres(Adres a) {
 		Set<Klant> klanten = new HashSet<Klant>(findByPostcodeAndHuisnummer(
-				a.getPostcode(), a.getHuisnummer(), a.getToevoeging())
-				.getBewoners()); 
+				a.getPostcode(), a.getHuisnummer(), a.getToevoeging()).getBewoners()); 
 		klanten.addAll(a.getBezorgers());
 		return klanten;
 	}
@@ -94,11 +85,13 @@ public class KlantService extends DualEntityService<Klant, Account> {
 			return adres.getId();
 		} catch (SQLException sqlexc) {
 			if (isDuplicateKeyError(sqlexc)) {
-				return getUniqueAdres(adres.uniqueValue()).getId();
+				return findByPostcodeAndHuisnummer(
+						adres.getPostcode(), adres.getHuisnummer(), adres.getToevoeging()).getId();
 			}
 		} catch (TransactionalException te) { // Is wat we catchen
 			if (isDuplicateKeyError(isSQLCauseForRollback(te))) {
-				return getUniqueAdres(adres.uniqueValue()).getId();
+				return findByPostcodeAndHuisnummer(
+						adres.getPostcode(), adres.getHuisnummer(), adres.getToevoeging()).getId();
 			}
 			return txExc;
 		}
@@ -110,24 +103,49 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	public Adres getAdres(@PathParam("id") long adresID) {
 		return this.adresDAO.get(adresID);
 	}
-	
-	public Adres getUniqueAdres(String[] uniqueValues) {
-		return findByPostcodeAndHuisnummer(uniqueValues[0], Integer.parseInt(uniqueValues[1]), uniqueValues[2]);
-	}
-	
-	
+/*******
+ * zoek/adres/straatnaam=str&huisnummer=int&toevoeging=str&postcode=str&woonplaats=str
+ */
 	@GET @Path("zoek/adres/{query}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Set<Adres> findAdres(@PathParam("query") String query) {
-		return new HashSet<Adres>(this.adresDAO.get(getKeyParamPairs(query)));
+		return new HashSet<Adres>(this.adresDAO.get(getParamValuePairs(query)));
 	}
 	
+	public Adres findByPostcodeAndHuisnummer(String postcode, int huisnummer, String toevoeging) {
+		for (Adres a : this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer)) {
+			if (trimUpCase(a.getToevoeging()).equals(trimUpCase(toevoeging))) { return a; }
+		}
+		return null;
+	}
+	
+// Accountbeheer <Simple>
+	@GET @Path("simple/klant" + ID)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Account> getAccounts(@PathParam("id") long id) {
+		return get(id).getAccounts();
+	}
+
+	
+	public static long getSerialversionuid() {return serialVersionUID;}
+	
+	
+	
+}
+/*
+	
+// eigenlijke allemaal niet meer nodig dit:..
 	private static final String ZoekAdres = "zoek/adres/";
+	private static final String AND = "&";
 	private static final String MetPostcode = "postcode={postcode}";
 	private static final String MetHuisnummer = "huisnummer={huisnummer}";
 	private static final String MetToevoeging = "toevoeging={toevoeging}";
 	private static final String MetStraat = "straat={straat}";
 	private static final String MetPlaats = "plaats={plaats}";
+	
+	public Adres getUniqueAdres(String[] uniqueValues) {
+		return findByPostcodeAndHuisnummer(uniqueValues[0], Integer.parseInt(uniqueValues[1]), uniqueValues[2]);
+	}
 	
 	@GET @Path(ZoekAdres + MetPostcode)
 	@Produces(MediaType.APPLICATION_JSON)
@@ -144,18 +162,7 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return new HashSet<Adres>(this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer));
 	}
 	
-	@GET @Path(ZoekAdres + MetPostcode + AND + MetHuisnummer + AND + MetToevoeging)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Adres findByPostcodeAndHuisnummer(
-			@PathParam("postcode") String postcode, 
-			@PathParam("huisnummer") int huisnummer, 
-			@PathParam("toevoeging") String toevoeging) {
-		for (Adres a : findByPostcodeAndHuisnummer(postcode, huisnummer)) {
-			if (hasEqualToevoeging(a, toevoeging)) { return a; }
-		}
-		return null;
-	}
-
+	
 	@GET @Path(ZoekAdres + MetStraat + AND + MetPlaats)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Set<Adres> findByStraatAndPlaats(
@@ -192,24 +199,6 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return null;
 	}
 
-	public static boolean hasEqualToevoeging(Adres a, String toevoeging) {
-		return trimUpCase(a.getToevoeging()).equals(trimUpCase(toevoeging));
-	}
-
-// Accountbeheer <Simple>
-	@GET @Path("simple/klant" + ID)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Set<Account> getAccounts(@PathParam("id") long id) {
-		return get(id).getAccounts();
-	}
 	
 	
-	
-	
-	
-	
-	public static long getSerialversionuid() {return serialVersionUID;}
-	
-	
-	
-}
+*/
