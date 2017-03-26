@@ -21,7 +21,6 @@ public class RestResourceConfig extends ResourceConfig implements java.io.Serial
 		
 	public RestResourceConfig() {
 		packages("com.workshop3.model;com.workshop3.service");
-		this.register(com.workshop3.manager.KlantManager.class);
 	}
 	
 	
