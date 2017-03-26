@@ -27,12 +27,12 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	public KlantService() { super(new KlantDAO(), new AccountDAO()); }
 
 	
-	public static String firstCapital(String s){
-		return s.trim().replace(s.substring(0, 1), s.substring(0, 1).toUpperCase());
+	public static String firstCapital(String str){
+		return str.trim().replace(str.substring(0, 1), str.substring(0, 1).toUpperCase());
 	}
 	
-	public static String trimUpCase(String postcode) {
-		return postcode.trim().replace(" ", "").toUpperCase();
+	public static String trimUpCase(String str) {
+		return str.trim().replace(" ", "").toUpperCase();
 	}
 	
 	public static boolean isValidEmail(String mail) {
@@ -104,16 +104,15 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return this.adresDAO.get(adresID);
 	}
 /*******
- * zoek/adres/straatnaam=str&huisnummer=int&toevoeging=str&postcode=str&woonplaats=str
- */
-	@GET @Path("zoek/adres/{query}")
+ * path/straatnaam=str&huisnummer=int&toevoeging=str&postcode=str&woonplaats=str
+ */	@GET @Path("zoek/adres/{query}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Set<Adres> findAdres(@PathParam("query") String query) {
-		return new HashSet<Adres>(this.adresDAO.get(getParamValuePairs(query)));
+		return new HashSet<Adres>(this.adresDAO.get(RestUtil.getParamValuePairs(query)));
 	}
 	
 	public Adres findByPostcodeAndHuisnummer(String postcode, int huisnummer, String toevoeging) {
-		for (Adres a : this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer)) {
+		for (Adres a : findByPostcodeAndHuisnummer(postcode, huisnummer)) {
 			if (trimUpCase(a.getToevoeging()).equals(trimUpCase(toevoeging))) { return a; }
 		}
 		return null;
@@ -128,21 +127,31 @@ public class KlantService extends DualEntityService<Klant, Account> {
 
 	
 	public static long getSerialversionuid() {return serialVersionUID;}
-	
-	
-	
-}
-/*
-	
-// eigenlijke allemaal niet meer nodig dit:..
+// Extraas	
 	private static final String ZoekAdres = "zoek/adres/";
 	private static final String AND = "&";
 	private static final String MetPostcode = "postcode={postcode}";
 	private static final String MetHuisnummer = "huisnummer={huisnummer}";
-	private static final String MetToevoeging = "toevoeging={toevoeging}";
+	//private static final String MetToevoeging = "toevoeging={toevoeging}";
 	private static final String MetStraat = "straat={straat}";
 	private static final String MetPlaats = "plaats={plaats}";
 	
+	@GET @Path(ZoekAdres + MetStraat + AND + MetPlaats)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Adres> findByStraatAndPlaats(@PathParam("straat") String straat,	@PathParam("plaats") String plaats) {
+		return new HashSet<Adres>(this.adresDAO.findByStraat(straat, plaats));
+	}
+	
+	@GET @Path(ZoekAdres + MetPostcode + AND + MetHuisnummer)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Set<Adres> findByPostcodeAndHuisnummer(@PathParam("postcode") String postcode, @PathParam("huisnummer") int huisnummer) {
+		return new HashSet<Adres>(this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer));
+	}
+	
+}
+	
+/*
+ * Overbodige methoden
 	public Adres getUniqueAdres(String[] uniqueValues) {
 		return findByPostcodeAndHuisnummer(uniqueValues[0], Integer.parseInt(uniqueValues[1]), uniqueValues[2]);
 	}
@@ -154,22 +163,6 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return new HashSet<Adres>(this.adresDAO.findByPostcode(postcode));
 	}
 	
-	@GET @Path(ZoekAdres + MetPostcode + AND + MetHuisnummer)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Set<Adres> findByPostcodeAndHuisnummer(
-			@PathParam("postcode") String postcode,
-			@PathParam("huisnummer") int huisnummer) {
-		return new HashSet<Adres>(this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer));
-	}
-	
-	
-	@GET @Path(ZoekAdres + MetStraat + AND + MetPlaats)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Set<Adres> findByStraatAndPlaats(
-			@PathParam("straat") String straat, 
-			@PathParam("plaats") String plaats) {
-		return new HashSet<Adres>(this.adresDAO.findByStraat(straat, plaats));
-	}
 	
 	@GET @Path(ZoekAdres + MetStraat + AND + MetHuisnummer + AND + MetPlaats)
 	@Produces(MediaType.APPLICATION_JSON)
@@ -198,7 +191,4 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		}
 		return null;
 	}
-
-	
-	
 */

@@ -119,7 +119,7 @@ public class Bestelling implements EntityIface {
 	@Override
 	public String toString() {
 		return "Bestellingnummer#: " + getId() + " " + getKlant() + " " + getDatum() + 
-				" ArtikelLijst: " + getArtikelen() + " " + NumberFormat.getCurrencyInstance().format(totaalPrijs());
+				" ArtikelLijst: " + getArtikelen() + " " + NumberFormat.getCurrencyInstance(Locale.GERMAN).format(totaalPrijs());
 	}
 	
 	@Override

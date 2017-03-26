@@ -40,7 +40,7 @@ public abstract class AbstractEntityService<E extends EntityIface> implements ja
 		return this.entityDAO.get(id);
 	}
 	
-	public E getUnique(String[] uniqueValues) {
+	public E getUnique(String[] uniqueValues) { // As good as deprecated..
 		return this.entityDAO.getUnique(uniqueValues);
 	}
 	
@@ -96,63 +96,66 @@ public abstract class AbstractEntityService<E extends EntityIface> implements ja
 		return new HashSet<E>(this.entityDAO.getAll());
 	}
 	
-// utilities - from URIstring to ParamValues Hier misschien een aparte klasse voor schrijven RestUtil oid..
-	protected static Map<String, String> getParamValuePairs(String uriQuery) {
-		Map<String, String> uriParams = new HashMap<String, String>();
-		if (uriQuery.matches("[;]")) { return uriParams; }
-		for (String s : uriQuery.split("&")) {
-			String[] keyParamPair = s.split("=");
-			switch (keyParamPair.length) {
-				case 1:
-					uriParams.put(keyParamPair[0], ""); break;
-				default:
-					uriParams.put(keyParamPair[0], keyParamPair[1]); break;				
-			}
-		}
-		return uriParams;
-	}
-
-	private static final String END = "Till2Limited";
-	private static final String BEGIN = "Frumd0Sig";
-	private static final String DATE = "TimpleTor";
-// Parsen
-	protected static Map<String, Object> getQuantities(Map<String, String> paramValues) {
-		Map<String, Object> queryProps = new HashMap<String, Object>();
-		
-		for (Map.Entry<String, String> entry : paramValues.entrySet()) {
-			String param = entry.getKey(), value = entry.getValue();
-			
-			if (value.matches("(P|p)([\\d]+[YMWD])+")) {
-				queryProps.put("period1-2", Period.parse(value));
-			} else if (value.matches("[\\d]{4}-[\\d]{2}-[\\d]{2}")) {
-				LocalDate d = LocalDate.parse(value);
-				if (param.matches("(van(af)?|begin|from).*")) { queryProps.put(BEGIN, d); } 
-				else if (param.matches("(until|tot|e(i)?nd).*")) { queryProps.put(END, d); }
-				else { queryProps.put(DATE, d); }
-			} else {
-				try {
-					queryProps.put(param, Long.parseLong(value));
-				} catch (NumberFormatException nfexc) {
-					queryProps.put(param, value);
+	protected static final class RestUtil { 
+// utilities - from URIstring to ParamValues	
+		protected static Map<String, String> getParamValuePairs(String uriQuery) {
+			Map<String, String> uriParams = new HashMap<String, String>();
+			if (uriQuery.matches("[;]")) { return uriParams; }
+			for (String s : uriQuery.split("&")) {
+				String[] keyParamPair = s.split("=");
+				switch (keyParamPair.length) {
+					case 1:
+						uriParams.put(keyParamPair[0], ""); break;
+					default:
+						uriParams.put(keyParamPair[0], keyParamPair[1]); break;				
 				}
 			}
+			return uriParams;
 		}
-		return queryProps;
-	}
-// more utilities - coupling date (begin, end etc.) to period.. DAO uses (LocalDate start, Period p)	
-	protected static Period getPeriod(Map<String, Object> quantities) {
-		if (quantities.containsKey(END)) { return getBeginDate(quantities).until((LocalDate) quantities.get(END)); }
-		quantities.values().removeIf((Object o) -> ( ! (o instanceof Period)));
-		if (quantities.values().iterator().hasNext()) { return (Period) quantities.values().iterator().next(); }
-		return Period.ofDays(1); 
-	}
-
-	protected static LocalDate getBeginDate(Map<String, Object> quantities) {
-		if (quantities.containsKey(BEGIN)) { return (LocalDate) quantities.get(BEGIN); }
-		if (quantities.containsKey(DATE)) { return (LocalDate) quantities.get(DATE); }
-		return LocalDate.now().minus(getPeriod(quantities));
-	}
 	
+		private static final String END = "Till2Limited";
+		private static final String BEGIN = "Frumd0Sig";
+		private static final String DATE = "TimpleTor";
+// Parsen
+		protected static Map<String, Object> getQuantities(Map<String, String> paramValues) {
+			Map<String, Object> queryProps = new HashMap<String, Object>();
+			
+			for (Map.Entry<String, String> entry : paramValues.entrySet()) {
+				String param = entry.getKey(), value = entry.getValue();
+				
+				if (value.matches("(P|p)([\\d]+[YMWD])+")) {
+					queryProps.put("period20", Period.parse(value));
+				} else if (value.matches("[\\d]{4}-[\\d]{2}-[\\d]{2}")) {
+					LocalDate d = LocalDate.parse(value);
+					if (param.matches("(van(af)?|begin|from).*")) { queryProps.put(BEGIN, d); } 
+					else if (param.matches("(until|tot|e(i)?nd).*")) { queryProps.put(END, d); }
+					else { queryProps.put(DATE, d); }
+				} else {
+					try {
+						queryProps.put(param, Long.parseLong(value));
+					} catch (NumberFormatException nfexc) {
+						queryProps.put(param, value);
+					}
+				}
+			}
+			return queryProps;
+		}
+// more utilities - coupling date (begin, end etc.) to period.. DAO uses (LocalDate start, Period p)	
+		protected static Period getPeriod(Map<String, Object> quantities) {
+			if (quantities.containsKey(END) && (quantities.containsKey(BEGIN) || quantities.containsKey(DATE))) {
+				return getBeginDate(quantities).until((LocalDate) quantities.get(END));
+			}
+			quantities.values().removeIf((Object o) -> ( ! (o instanceof Period)));
+			if (quantities.values().iterator().hasNext()) { return (Period) quantities.values().iterator().next(); }
+			return Period.ofDays(1); 
+		}
+	//deze methoden callen elkaar en defaulten naar de laatste 24 uur..
+		protected static LocalDate getBeginDate(Map<String, Object> quantities) {
+			if (quantities.containsKey(BEGIN)) { return (LocalDate) quantities.get(BEGIN); }
+			if (quantities.containsKey(DATE)) { return (LocalDate) quantities.get(DATE); }
+			return LocalDate.now().minus(getPeriod(quantities));
+		}
+	}
 // Een hack voor die gewrapte exceptions	
 	protected static SQLException isSQLCauseForRollback(TransactionalException te) {
 		Throwable cause = te.getCause();
