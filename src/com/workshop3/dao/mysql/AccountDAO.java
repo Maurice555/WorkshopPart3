@@ -16,10 +16,10 @@ public class AccountDAO extends DAO<Account> {
 	public AccountDAO() { super(Account.class); }
 
 	
-	@Override
-	public Account getUnique(String[] uniqueValues) {
-		return get(uniqueValues[0]);
-	}
+//	@Override
+//	public Account getUnique(String[] uniqueValues) {
+//		return get(uniqueValues[0]);
+//	}
 	
 	public Account get(String login) {
 		return (Account) this.em.createNativeQuery(

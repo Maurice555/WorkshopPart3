@@ -1,12 +1,13 @@
 package com.workshop3.model;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Named;
 import javax.persistence.*;
 import javax.xml.bind.annotation.*;
+
+import com.workshop3.service.BestellingService.Count;
 @XmlRootElement
 
 @Named
@@ -66,7 +67,7 @@ public class Artikel implements EntityIface {
 	@Override
 	public String toString() {
 		return "Artikelnummer: " + getId() + " " + getNaam() + " " 
-				+ getOmschrijving() + " " + NumberFormat.getCurrencyInstance().format(getPrijs());
+				+ getOmschrijving() + " " + Count.euroFormat().format(getPrijs());
 	}
 
 	@Override
@@ -79,7 +80,7 @@ public class Artikel implements EntityIface {
 	
 	@Override
 	public int hashCode() {
-		return (int)this.id;
+		return (int) this.id;
 	}
 	
 	

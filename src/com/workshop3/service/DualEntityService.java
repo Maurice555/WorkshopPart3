@@ -25,7 +25,6 @@ public abstract class DualEntityService<E extends EntityIface, S extends EntityI
 		super(dao1);
 		setSimpleDAO(dao2);
 	}
-
 	
 	public DAOIface<S> getSimpleDAO() {return this.simpleDAO;}
 	
@@ -38,8 +37,8 @@ public abstract class DualEntityService<E extends EntityIface, S extends EntityI
 		return this.simpleDAO.get(id);
 	}
 	
-	public S getUniqueSimple(String[] uniqueValues) {
-		return this.simpleDAO.getUnique(uniqueValues);
+	public S getUniqueSimple(Map<String, String> identifyingProps) {
+		return this.simpleDAO.getUnique(identifyingProps);
 	}
 	
 	public Set<S> getSimple(Map<String, String> keyValues) {
@@ -52,11 +51,11 @@ public abstract class DualEntityService<E extends EntityIface, S extends EntityI
 			return s.getId();
 		} catch (SQLException sqlexc) {
 			if (isDuplicateKeyError(sqlexc)) {
-				return getUniqueSimple(s.uniqueValue()).getId();
+				return getUniqueSimple(s.identifyingProps()).getId();
 			}
 		} catch (TransactionalException txexc) {
 			if (isDuplicateKeyError(isSQLCauseForRollback(txexc))) {
-				return getUniqueSimple(s.uniqueValue()).getId();
+				return getUniqueSimple(s.identifyingProps()).getId();
 			}
 			return txExc;
 		}
@@ -69,11 +68,11 @@ public abstract class DualEntityService<E extends EntityIface, S extends EntityI
 			return s.getId();
 		} catch (SQLException sqlexc) {
 			if (isDuplicateKeyError(sqlexc)) {
-				return getUniqueSimple(s.uniqueValue()).getId();
+				return getUniqueSimple(s.identifyingProps()).getId();
 			}			
 		} catch (TransactionalException txexc) {
 			if (isDuplicateKeyError(isSQLCauseForRollback(txexc))) {
-				return getUniqueSimple(s.uniqueValue()).getId();
+				return getUniqueSimple(s.identifyingProps()).getId();
 			}
 			return txExc;
 		}

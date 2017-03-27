@@ -125,8 +125,6 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return get(id).getAccounts();
 	}
 
-	
-	public static long getSerialversionuid() {return serialVersionUID;}
 // Extraas	
 	private static final String ZoekAdres = "zoek/adres/";
 	private static final String AND = "&";
@@ -147,6 +145,10 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	public Set<Adres> findByPostcodeAndHuisnummer(@PathParam("postcode") String postcode, @PathParam("huisnummer") int huisnummer) {
 		return new HashSet<Adres>(this.adresDAO.findByPostcodeAndHuisnummer(postcode, huisnummer));
 	}
+
+
+	public static long getSerialversionuid() {return serialVersionUID;}
+	
 	
 }
 	

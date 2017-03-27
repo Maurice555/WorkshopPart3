@@ -40,8 +40,8 @@ public abstract class AbstractEntityService<E extends EntityIface> implements ja
 		return this.entityDAO.get(id);
 	}
 	
-	public E getUnique(String[] uniqueValues) { // As good as deprecated..
-		return this.entityDAO.getUnique(uniqueValues);
+	public E getUnique(Map<String, String> identifyingProps) {
+		return this.entityDAO.getUnique(identifyingProps);
 	}
 	
 	public Set<E> get(Map<String, String> keyValues) {
@@ -57,11 +57,11 @@ public abstract class AbstractEntityService<E extends EntityIface> implements ja
 			return e.getId();
 		} catch (SQLException sqlexc) {
 			if (isDuplicateKeyError(sqlexc)) {
-				return getUnique(e.uniqueValue()).getId();
+				return getUnique(e.identifyingProps()).getId();
 			}
 		} catch (TransactionalException txexc) {
 			if (isDuplicateKeyError(isSQLCauseForRollback(txexc))) {
-				return getUnique(e.uniqueValue()).getId();
+				return getUnique(e.identifyingProps()).getId();
 			}
 			return txExc;
 		}
@@ -74,10 +74,10 @@ public abstract class AbstractEntityService<E extends EntityIface> implements ja
 			return e.getId();
 		} catch (SQLException sqlexc) {
 			if (isDuplicateKeyError(sqlexc))
-				return getUnique(e.uniqueValue()).getId();
+				return getUnique(e.identifyingProps()).getId();
 		} catch (TransactionalException txexc) {
 			if (isDuplicateKeyError(isSQLCauseForRollback(txexc))) {
-				return getUnique(e.uniqueValue()).getId();
+				return getUnique(e.identifyingProps()).getId();
 			}
 			return txExc;
 		}
@@ -123,7 +123,7 @@ public abstract class AbstractEntityService<E extends EntityIface> implements ja
 			for (Map.Entry<String, String> entry : paramValues.entrySet()) {
 				String param = entry.getKey(), value = entry.getValue();
 				
-				if (value.matches("(P|p)([\\d]+[YMWD])+")) {
+				if (value.matches("(P|p)([\\d]+[YMWD]{1})+")) {
 					queryProps.put("period20", Period.parse(value));
 				} else if (value.matches("[\\d]{4}-[\\d]{2}-[\\d]{2}")) {
 					LocalDate d = LocalDate.parse(value);

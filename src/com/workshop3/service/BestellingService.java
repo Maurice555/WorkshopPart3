@@ -60,7 +60,7 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		return get(id).getKlant().getId();
 	}
 	
-	@PUT @Path("update/" + ID + "&status={status : [\\d]{1}}") // 405 Method Not Allowed
+	@PUT @Path("update/" + ID + "&status={status : [\\d]{1}") // 405 Method Not Allowed
 	public void statusUpdate(@PathParam("id") long id, @PathParam("status") int status) {
 		Bestelling b = get(id);
 		b.updateStatus(status);
@@ -126,36 +126,44 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 	
 	@GET @Path("verkoopcijfers/artikel" + ID + "&{temporalType}")
 	@Produces(MediaType.TEXT_PLAIN)
-	public int artikelCount(@PathParam("id") long id, @PathParam("temporalType") String temporal) {
-		return Count.artikelAmountSold(getSimple(id), findByDateAndPeriod(temporal));
+	public int artikelCount(@PathParam("id") long artikelID, @PathParam("temporalType") String temporal) {
+		return Count.artikelAmountSold(getSimple(artikelID), findByDateAndPeriod(temporal));
 	}
 	
 	
 	public static final class Count { // static counters need Set<Bestelling>
 	
+		public static final NumberFormat euroFormat() {
+			return NumberFormat.getCurrencyInstance(Locale.GERMAN);
+		}
+		
 		private static final String AmountCounted = "Aantal getelde bestellingen";
 
 		public static String salesProgress(Set<Bestelling> bestellingen) {
 			Map<String, Object> salesValues = new LinkedHashMap<String, Object>();
 			BigDecimal waarde = salesWorth(bestellingen);
-			salesValues.put("Waarde van de getelde bestellingen", 
-					NumberFormat.getCurrencyInstance(Locale.GERMAN).format(waarde));
+			salesValues.put("Waarde van de getelde bestellingen", euroFormat().format(waarde));
 			Map<String, Object> stats = statusProgress(bestellingen);
 			salesValues.putAll(stats);
 			salesValues.put("Gemiddelde totaalprijs van de bestellingen", 
-					NumberFormat.getCurrencyInstance(Locale.GERMAN).format(
-					waarde.doubleValue() / (int) stats.get(AmountCounted)));
+					euroFormat().format(waarde.doubleValue() / (int) stats.get(AmountCounted)));
 			return salesValues.toString();
+		}
+		
+		public static BigDecimal price(Bestelling b) {
+			BigDecimal price = new BigDecimal(0.0);
+			for (Map.Entry<Artikel, Integer> entry : b.getArtikelen().entrySet()) {
+				BigDecimal artikelTimesAantal = entry.getKey().getPrijs()
+						.multiply(new BigDecimal(entry.getValue()));
+				price = price.add(artikelTimesAantal);
+			}
+			return price;
 		}
 		
 		public static BigDecimal salesWorth(Set<Bestelling> bestellingen) {
 			BigDecimal turnover = new BigDecimal(0.0);
 			for (Bestelling b : bestellingen) {
-				for (Map.Entry<Artikel, Integer> entry : b.getArtikelen().entrySet()) {
-					BigDecimal artikelTimesAantal = entry.getKey().getPrijs()
-							.multiply(new BigDecimal(entry.getValue()));
-					turnover = turnover.add(artikelTimesAantal);
-				}
+				turnover = turnover.add(price(b));
 			}
 			return turnover;
 		}

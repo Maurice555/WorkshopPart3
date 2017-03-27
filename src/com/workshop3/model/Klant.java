@@ -119,9 +119,16 @@ public class Klant implements EntityIface {
 	public void setAccounts(Set<Account> accounts) {this.accounts = accounts;}
 	
 	
+//	@Override
+//	public String[] uniqueValue() {
+//		return new String[] {getEmail()};
+//	}
+	
 	@Override
-	public String[] uniqueValue() {
-		return new String[] {getEmail()};
+	public Map<String, String> identifyingProps() {
+		Map<String, String> props = new HashMap<String, String>();
+		props.put("email", getEmail());
+		return props;
 	}
 	
 	@Override

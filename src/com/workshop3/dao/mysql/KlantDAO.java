@@ -18,10 +18,10 @@ public class KlantDAO extends DAO<Klant> {
 	
 	public KlantDAO() { super(Klant.class); }
 	
-	@Override
-	public Klant getUnique(String[] uniqueValues) {
-		return get(uniqueValues[0]);
-	}
+//	@Override
+//	public Klant getUnique(String[] uniqueValues) {
+//		return get(uniqueValues[0]);
+//	}
 	
 	public Klant get(String mail) {
 		return (Klant) this.em.createNativeQuery(

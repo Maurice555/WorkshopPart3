@@ -1,13 +1,14 @@
 package com.workshop3.model;
 
 import java.math.BigDecimal;
-import java.text.NumberFormat;
 import java.util.*;
 
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Named;
 import javax.persistence.*;
 import javax.xml.bind.annotation.*;
+
+import static com.workshop3.service.BestellingService.Count.*;
 @XmlRootElement
 
 @Named
@@ -86,10 +87,8 @@ public class Bestelling implements EntityIface {
 	
 
 	public void addArtikel(Artikel artikel, int aantal) {
-		int totalAantal = aantal;
-		if (this.artikelen.containsKey(artikel)) {
-			totalAantal += this.artikelen.get(artikel);
-		}
+		int totalAantal = Math.max(0, aantal);
+		if (this.artikelen.containsKey(artikel)) { totalAantal += this.artikelen.get(artikel); }
 		this.artikelen.put(artikel, totalAantal);
 	}
 	
@@ -106,31 +105,26 @@ public class Bestelling implements EntityIface {
 	}
 	
 	public BigDecimal totaalPrijs() {
-		BigDecimal total = new BigDecimal(0.0);
-		for (Map.Entry<Artikel, Integer> entry : this.artikelen.entrySet()) {
-			BigDecimal artikelTimesAantal = entry.getKey().getPrijs()
-					.multiply(new BigDecimal(entry.getValue()));
-			
-			total = total.add(artikelTimesAantal);
-		}
-		return total;
+		return price(this);
 	}
 	
 	@Override
 	public String toString() {
 		return "Bestellingnummer#: " + getId() + " " + getKlant() + " " + getDatum() + 
-				" ArtikelLijst: " + getArtikelen() + " " + NumberFormat.getCurrencyInstance(Locale.GERMAN).format(totaalPrijs());
+				" ArtikelLijst: " + getArtikelen() + " " + euroFormat().format(totaalPrijs());
 	}
 	
 	@Override
 	public boolean equals(Object o) {
-		if (o instanceof Bestelling) { return ((Bestelling)o).getId() == getId(); }
+		if (o instanceof Bestelling) {
+			return ((Bestelling) o).getId() == this.id; 
+		}
 		return false;
 	}
 
 	@Override
 	public int hashCode() {
-		return (int)getId();
+		return (int) this.id;
 	}
 
 	public static long getSerialversionuid() {return serialVersionUID;}

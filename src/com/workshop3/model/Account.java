@@ -1,6 +1,8 @@
 package com.workshop3.model;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Named;
@@ -72,10 +74,16 @@ public class Account implements EntityIface {
 	public void setDatum(Date datum) {this.datum = datum;}
 	
 	
+//	@Override
+//	public String[] uniqueValue() {
+//		return new String[] {getLogin()};
+//	}
+	
 	@Override
-	public String[] uniqueValue() {
-		return new String[] {getLogin()};
-		
+	public Map<String, String> identifyingProps() {
+		Map<String, String> props = new HashMap<String, String>();
+		props.put("naam", getLogin());
+		return props;
 	}
 	
 	@Override

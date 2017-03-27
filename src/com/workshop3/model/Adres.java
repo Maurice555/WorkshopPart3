@@ -1,5 +1,7 @@
 package com.workshop3.model;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import javax.enterprise.context.SessionScoped;
@@ -86,9 +88,9 @@ public class Adres implements EntityIface {
 	
 	public void setHuisnummer(int huisnummer) {this.huisnummer = huisnummer;}
 	
-	public String getToevoeging() {return this.toevoeging;}
+	public String getToevoeging() {return this.toevoeging != null ? this.toevoeging : "";}
 	
-	public void setToevoeging(String toevoeging) {this.toevoeging = toevoeging == null ? "" : trimUpCase(toevoeging);}
+	public void setToevoeging(String toevoeging) {this.toevoeging = toevoeging != null ? trimUpCase(toevoeging) : "";}
 	
 	public String getPostcode() {return this.postcode;}
 	
@@ -107,10 +109,18 @@ public class Adres implements EntityIface {
 	public void setBezorgers(Set<Klant> bezorgers) {this.bezorgers = bezorgers;}
 	
 
+//	@Override
+//	public String[] uniqueValue() {
+//		return new String[] {getPostcode(), getHuisnummer() + "", getToevoeging()};
+//	}
+	
 	@Override
-	public String[] uniqueValue() {
-		return new String[] {getPostcode(), getHuisnummer() + "", getToevoeging()};
-		
+	public Map<String, String> identifyingProps() {
+		Map<String, String> props = new HashMap<String, String>();
+		props.put("postcode", getPostcode());
+		props.put("huisnummer", getHuisnummer() +"");
+		props.put("toevoeging", getToevoeging());
+		return props;
 	}
 	
 	@Override
