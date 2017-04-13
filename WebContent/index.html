@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.0.min.js"></script>
+		<title>JustEatThis</title>
+		<style type="text/css">
+			html, body, div {
+				margin: 0;
+				padding: 0;
+				background-color: #001a0d;
+			}
+			.control {
+				position: fixed;
+				right: 0;
+				left: 0;
+				height: 36px;
+				border-top: 3px solid black;
+				background-color: #404040;
+				padding: 2px;
+				color: orange;
+				font-family: sans-serif;
+				font-style: italic;
+				font-weight: bold;
+				font-size: 18pt;
+				border-bottom: 1px solid white;
+				box-shadow: 0px -3px 8px 4px black;
+			}
+			.contain {
+				margin: auto;
+				display: block;
+				padding: 40px 0px 32px 0px;
+				content: "";
+				background-color: grey;
+			}	
+			.main {
+				padding: 0 0 0 0;
+				margin: 0;
+				background-color: darkgrey;
+			}
+			.header {
+				height: 42px;
+				padding: 5px;
+				background: linear-gradient(left, #3d2d0f, #ffc14d, orange, #3d2d0f);
+				background: -moz-linear-gradient(left, #3d2d0f, #ffc14d, orange, #3d2d0f);
+				background: -webkit-linear-gradient(left, #3d2d0f, #ffc14d, orange, #3d2d0f);
+				text-align: center;
+				font-size: 24pt;
+				font-family: "Times New Roman", Georgia, Serif;
+				font-style: small-caps;
+				font-weight: bold;
+				color: #3b111f;
+			}
+			.bestelling {
+				float: left;
+				position: absolute;
+				width: 320px;
+				background-color: white;
+				color: black;
+				font: 12pt arial;
+				border-top:  1px solid;
+				padding: 0.5em;
+				border-bottom: 1px solid;
+			}
+			.nav {
+				position: fixed;
+				bottom: 0;
+				right: 0;
+				left: 0;
+				height: 32px;
+				border-top: 1px solid white;
+				background-color: grey;
+			}
+			button {
+				background: linear-gradient(top, #808080, #404040);
+				background: -moz-linear-gradient(top, #808080, #404040);
+				background: -webkit-linear-gradient(top, #808080, #404040);
+				border-top-color: white;
+				border-left-color: lightgrey;
+				color: lightgrey;
+				font-size: 14pt;
+				text-align: center;
+				-webkit-transition-duration: 0.3s;
+				transition-duration: 0.3s;
+			} button:hover {
+				background: linear-gradient(top, darkgrey, #737373);
+				background: -moz-linear-gradient(top, darkgrey, #737373);
+				background: -webkit-linear-gradient(top, darkgrey, #737373);
+				color: white;
+				box-shadow: 1px 1px 5px 0px;
+			}
+			.control button {
+				border: 2px solid black;
+				background-color: black;
+				color: orange;
+				font-family: sans-serif;
+				font-style: italic;
+				font-weight: bold;
+				font-size: 18pt;
+			} .control button:hover {
+				border-bottom-color: orange;
+			}
+			.bestelling table {
+				outline-width: 1px;
+			}.bestelling th {
+				border-bottom: 1px solid black;
+			} .bestelling td {
+				text-align: right;
+			} .bestelling td#artikelnaam {
+				text-align: left;
+			} 
+			.bestelling button {
+				font-size: 12pt;
+				padding: 0px 3px;
+			} .bestelling button:hover {
+				background-color: #404040;
+			} .bestelling button:active {
+				color: white;
+			}
+			
+		</style>
+
+		<script type="text/javascript">
+			function saveBestelling(){
+				$.post("WorkshopPart3/bestelling/save", function(id){
+				 	$(".bestelling").append(id);
+				});
+			}
+			function klantMenu(){
+
+			}
+			
+			function drawBestelling(bestelling){
+				// var tableHeader = '<tr><th colspan="4">Menu</th><th>edit</th></tr>';
+				var bestellijst = getBestellijst(bestelling);
+				var bestelTabel = "";
+				var totaalPrijs = 0;
+				for (var i = 0; i < bestellijst.length; i++){
+				 	bestelTabel += '<tr>'+ drawArtikelAantal(bestellijst[i]) +'</tr>';
+				 	totaalPrijs += bestellijst[i].aantalMaalPrijs();
+				}
+				return '<table align="center">'+ bestelTabel +'<tr><td colspan ="4" align="right" style="border-top:1px solid;">totaal: &euro; '+ totaalPrijs.toFixed(2) +'</td><td><button onclick="saveBestelling()">opslaan</button></td></tr></table>';
+			}
+			function drawArtikelAantal(artikelAantal){
+				var newCell = '</td><td>';
+				return '<td>'+ artikelAantal.id +'</td><td id="artikelnaam">'+ artikelAantal.naam + newCell + '&euro; '+artikelAantal.prijs.toFixed(2) + newCell + artikelAantal.aantal + newCell +'<button onclick="removeArtikel('+ artikelAantal.id +')">-</button></td>';
+			}
+			function ArtikelAantal(id, naam, omschrijving, prijs, aantal){
+				this.id = id;
+				this.naam = naam;
+				this.omschrijving = omschrijving;
+				this.prijs = prijs;
+				this.aantal = aantal;
+				this.aantalMaalPrijs = function(){ return this.prijs * this.aantal; }
+			}
+			
+			function getBestellijst(bestelling){
+				var bestellijst = [];
+				var entries = bestelling.artikelen.entry;
+				for (var i = 0; i < entries.length; i++){
+					var artikelAantal = new ArtikelAantal(
+						entries[i]["key"]["id"], 
+						entries[i]["key"]["naam"], 
+						entries[i]["key"]["omschrijving"], 
+						entries[i]["key"]["prijs"], 
+						entries[i]["value"]
+					);
+					bestellijst.push(artikelAantal);	
+				}
+				return bestellijst;
+			}
+
+			$(document).ready(function(){
+				$("#voegartitoe").hide();
+				$(".klant").hide();
+				$.get("artikelen.html", function(data){
+					$(".main").html(data);
+				});
+				$(".bestelling").hide(250);
+				$.get("klant.html", function(page){
+					$(".klant").html(page);
+				})
+				$.getJSON("WorkshopPart3/bestelling/get", function(result){
+					$(".bestelling").html(drawBestelling(result));
+				});
+			});
+
+		</script>
+	</head>
+	
+	<body>
+		<div class="control">
+			
+			{ this(
+			<button onclick="$('.bestelling').toggle(240)">Uw Bestelling</button>,
+			<button onclick="$('.klant').toggle(240)">Uw Gegevens</button>
+			); }
+
+			<div class="bestelling"></div>
+			<div id="voegartitoe"></div>
+		</div>
+
+		<div class="contain">
+			<div class="klant"></div>
+			
+			<div class="main">
+				
+			</div>
+		</div>
+
+		<div class="nav">WorkshopPart3/</div>
+
+	</body>
+</html>

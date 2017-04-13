@@ -4,50 +4,33 @@
 	<title>Broodjes en Drankjes</title>
 		<style type="text/css">
 			html, body {
-				height: 100vh;
 				padding: 0;
 				margin: 0;
-				background-color: lightgrey;
-				color: #262626;
 			}
-			div.header {
+			
+			#aanbod {
 				margin: 0;
-				height: 42px;
-				padding: 5px;
-				background-color: orange;
-				text-align: center;
-				font-size: 24pt;
-				font-family: "Times New Roman", Georgia, Serif;
-				font-style: small-caps bold;
-				color: #3b111f;
-			}
-			div.content {
-				border-top:  5px solid black;
 				padding: 1em;
-				border-bottom: 1px solid white;
-			}
-			.content th {
-				border-bottom: 1px solid black;
-			} .content td {
-				text-align: right;
-			} .content td#artikelnaam {
-				text-align: left;
-			} .content tr:last-child {
-				border-top: 1px solid black;
-			}
-			div#aanbod {
-				padding: 2em;
 				align-self: stretch;
 				background-color: #001a0d;
-				box-shadow: 0px 2px 4px black inset;
+				box-shadow: 0px 2px 6px black inset;
 			}
 			.nav {
-				align-self: flex-end;
-				align-content: center;
-				padding: 5px;
+				clear: all;
+				height: 32px;
+				padding: 3px;
 				background-color: #062d2d;
 				border-top: 1px solid grey;
 			}
+			#voegartitoe {
+				position: absolute;
+				margin-left: 120px;
+				background-image: url("images/arrow.png");
+				background-size: 160px 240px;
+				width: 160px;
+				height: 240px;
+			}
+			
 			table.showroom {
 				width: 960px;
 				background-color: #3b111f;
@@ -58,49 +41,43 @@
 			} table.showroom:hover {
 				box-shadow: 0px 0px 8px #9cff33;
 				border-color: #9cff33;
-			}
-			.showroom img {
-				align-self: center;
-			}
-			.showroom td {
-				background-color: #a7bebe;
-				padding: 0;
-				padding-top: 2px;
+			} .showroom td {
+				background-color: #593a78; /*#a7bebe #bff28c #9cff33*/
+				padding: 0px;
+				padding-top: 6px;
 				padding-bottom: 4px;
 				border: 3px solid #3b111f;
-				border-top-color: #9cff33;
+				border-top-color: #9ce64c;
 				overflow: hidden;
-				text-align: justify;
-				-webkit-transition-duration: 0.5s;
-				transition-duration: 0.5s;
+				-webkit-transition-duration: 0.7s;
+				transition-duration: 0.7s;
 			} .showroom td:hover {
-				background-color: #bff28c;
-			}
-			.showroom h4 {
+				border-top-color: #9cff33;
+				background-color: #78981b;
+			} .showroom h5 {
 				font-family: "Trebuchet MS", Helvetica, sans-serif;
 				font-size: 20pt;
-				font-style: italic;
+				font-style: italic oblique;
 				color: lightgrey;
 				background-color: #3b111f;
+			} .showroom img {
+				margin: auto;
+				display: block;
+				width:288px;
+				height:220px;
 			}
 			#aanbod button {
 				width: 128px;
 				height: 32px;
 				border: 1px solid black;
-				background: linear-gradient(top, #808080, #404040);
-				background: -moz-linear-gradient(top, #808080, #404040);
-				background: -webkit-linear-gradient(top, #808080, #404040);
 				border-top-color: white;
 				border-left-color: lightgrey;
 				color: lightgrey;
 				font-size: 14pt;
 				text-align: center;
-				/*-webkit-transition-duration: 0.3s;
-				transition-duration: 0.3s;*/
+				-webkit-transition-duration: 0.3s;
+				transition-duration: 0.3s;
 			} #aanbod button:hover {
-				background: linear-gradient(top, darkgrey, #737373);
-				background: -moz-linear-gradient(top, darkgrey, #737373);
-				background: -webkit-linear-gradient(top, darkgrey, #737373);
 				color: white;
 				box-shadow: 1px 1px 5px 0px #3b111f;
 			} #aanbod button:active {
@@ -111,7 +88,7 @@
 			} 
 			.nav button {
 				width: 120px;
-				height: 32px;
+				height: 28px;
 				color: lightgrey;
 				background-color: #1f473d;
 				border: 2px solid #1f473d;
@@ -126,75 +103,35 @@
 			var aanbod = [];
 				
 			function drawArtikelCell(artikel){
-				var imgUrl = '<img src="images/aanbod'+ artikel.id +'.jpg" style="width:284px;height:200px;" align="center">';
-				var presentArtikel = "<h4>"+ artikel.naam +'</h4></br>'+ imgUrl +"</br>"+ artikel.omschrijving +
+				var imgUrl = '<img src="images/aanbod'+ artikel.id +'.jpg">';
+				var presentArtikel = "<h5>"+ artikel.naam +'</h5>'+ imgUrl +"</br>"+ artikel.omschrijving +
 						"</br>&euro; "+ artikel.prijs.toFixed(2) +"</br>";
 				var button = '<button onclick="addArtikel('+ artikel.id +')">ja lekker</button>';
 				return '<td>'+ presentArtikel + button +"</td>";
 			}
-			function drawArtikelAantal(artikelAantal){
-				var newCell = '</td><td>';
-				return '<td>'+ artikelAantal.id +'</td><td id="artikelnaam">'+ artikelAantal.naam + newCell + '&euro; '+artikelAantal.prijs.toFixed(2) + newCell + artikelAantal.aantal +'</td>';
-			}
-			function drawBestelling(bestelling){
-				var tableHeader = '<tr><th> # </th><th colspan="2">Uw Bestelling</th><th>aantal</th></tr>';
-				var bestellijst = getBestellijst(bestelling);
-				var bestelTabel = "";
-				var totaalPrijs = 0;
-				for (var i = 0; i < bestellijst.length; i++){
-				 	bestelTabel += '<tr>'+ drawArtikelAantal(bestellijst[i]) +'</tr>';
-				 	totaalPrijs += bestellijst[i].aantalMaalPrijs();
-				}
-				return '<table>'+ tableHeader + bestelTabel +'<tr><td></td><td></td><td>totaal:</td><td style="border-top:1px solid;">&euro; '+ totaalPrijs.toFixed(2) +'<button onclick="saveBestelling()"></button></td></tr></table>';
-			}
-			function ArtikelAantal(id, naam, omschrijving, prijs, aantal){
-				this.id = id;
-				this.naam = naam;
-				this.omschrijving = omschrijving;
-				this.prijs = prijs;
-				this.aantal = aantal;
-				this.aantalMaalPrijs = function(){ return this.prijs * this.aantal; }
-			}
 			
-			function getBestellijst(bestelling){
-				var bestellijst = [];
-				var entries = bestelling.artikelen.entry;
-				for (var i = 0; i < entries.length; i++){
-					var artikelAantal;
-					for (var v in entries[i]){
-						if (v == "key"){
-							artikelAantal = new ArtikelAantal(
-								entries[i][v]["id"], 
-								entries[i][v]["naam"], 
-								entries[i][v]["omschrijving"], 
-								entries[i][v]["prijs"], 
-								entries[i]["value"]
-							);
-						}
-					}
-					bestellijst.push(artikelAantal);	
-				}
-				return bestellijst;
-			}
-
+			
 			function addArtikel(id){
+				$("#voegartitoe").show(72);
+				var div = document.getElementById("voegartitoe");
+				var pos = 144;
+				var interval = setInterval(frame, 3);
+				function frame(){
+					if (pos == 0){
+						clearInterval(interval);
+					} else {
+						pos--;
+						div.style.top = pos +"px";
+					}
+				}
 				$.getJSON("WorkshopPart3/bestelling/add/artikelId="+ id, function(bestelling){
-					$(".content").html(drawBestelling(bestelling));
+					$(".bestelling").html(drawBestelling(bestelling));
 				});
-				// $.ajax({
-				// 	type: "GET",
-				// 	url: "WorkshopPart3/bestelling/add/artikelId="+ id,
-				// 	data: bestelling,
-				// 	dataType: "application/json",
-				// 	contentType: "text/plain; charset=UTF-8",
-				// 	success: function(){ $(".content").append(bestelling); },
-				// 	error: function(xhr, textStatus, errorThrown){alert("Artikel "+ id +" toevoegen mislukt "+ 
-				// 		textStatus +": "+ errorThrown);}
-				// });
+				$("#voegartitoe").hide(400);
 			}
-			function saveBestelling(){
-				$.get("WorkshopPart3/bestelling/save", function(result){
-					$(".content").append("result = "+ result);
+			function removeArtikel(id){
+				$.getJSON("WorkshopPart3/bestelling/remove/artikelId="+ id, function(bestelling){
+					$(".bestelling").html(drawBestelling(bestelling));
 				});
 			}
 			function printRows(index, artikel){
@@ -230,16 +167,13 @@
 		</script>
 	</head>
 	<body>
-
-		<div class="content"></div>
-
+		
 		<div class="header">Vandaag vers in de Aanbieding</div>
-	
+
 		<div id="aanbod">
 			<table class="showroom" align="center"><tr></tr></table>
-		</div>
 
-		<div class="nav"></div>
+		</div>
 		
 	</body>
 </html>

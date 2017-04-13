@@ -1,0 +1,211 @@
+<html>
+	<head>
+		<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.0.min.js"></script>
+		<title>klantformulier</title>
+		<style type="text/css">
+			html, body {
+				margin: 0;
+			}
+			.content {
+				background-color: black;
+				color: white;
+			}
+			.klantgegevens {
+				background-color: lightgrey;
+			} 
+			.menu {
+				background-color: darkgrey;
+				color: white;
+			}
+			.klantgegevens td {
+				text-align: right;
+			}
+			.klantgegevens input {
+				align-self: left;
+				border: 2px solid lightgreen;
+				border-radius: 3px;
+				padding: 3px;
+				-webkit-transition-duration: 0.5s;
+				transition-duration: 0.5s;
+			} .klantgegevens input:required {
+				border-color: red;
+			} .klantgegevens input:required:valid {
+				border: 2px solid green;
+			} .klantgegevens input:focus {
+				outline-offset: 2px;
+				outline-style: 1px solid yellow;
+				border-color: yellow;
+			}
+			.result {
+				background-color: white;
+				color: black;
+			}
+
+		</style>
+
+		<script type="text/javascript">
+
+			function login() {
+				var account = {
+					"login": $("input#login").val(),
+					"pass": $("input#pass").val()
+				}
+				var accountJson = JSON.stringify(account);
+				$.ajax({
+					type: "POST",
+					contentType: "application/json",
+					url: "WorkshopPart3/klant/account/set",
+					dataType: "json",
+					data: accountJson,
+					success: function(status,xhr){$(".result").append(status + xhr.statusText);},
+					error: function(xhr,textStatus,errorThrown){$(".result").append(xhr.statusText + textStatus);}
+					//,
+					// complete: function(){
+					// 	$.post("WorkshopPart3/klant/login", function(result){
+					// 		$(".result").append(result);
+					// 	});
+					//}
+				});
+			}
+
+			// function getAdres(){
+			// 	$.getJSON("WorkshopPart3/klant/adres/get", function(result){
+			// 		return result;
+			// 	});
+			// }
+			function postKlant(){
+				var klant = {
+					"voornaam": $("input#voornaam").val(),
+					"tussenvoegsel": $("input#tussenvoegsel").val(),
+					"achternaam": $("input#achternaam").val(),
+					"email": $("input#email").val()
+				};
+				var klantJson = JSON.stringify(klant);
+				$.ajax({
+					type: "POST",
+					contentType: "application/json",
+					url: "WorkshopPart3/klant/set",
+					dataType: "json",
+					data: klantJson,
+					success: function(status,xhr){$(".result").append(xhr.statusText + status);},
+					error: function(xhr,textStatus,errorThrown){$(".result").append(xhr.statusText + textStatus + errorThrown);}
+				});
+			}
+			function postAdres(){
+				var adres = {
+					"straatnaam": $("input#straatnaam").val(),
+					"huisnummer": $("input#huisnummer").val(),
+					"toevoeging": $("input#toevoeging").val(),
+					"postcode": $("input#postcode").val(),
+					"woonplaats": $("input#woonplaats").val()
+				};
+				var adresJson = JSON.stringify(adres);
+				$.ajax({
+					type: "POST",
+					contentType: "application/json",
+					url: "WorkshopPart3/klant/adres",
+					dataType: "json",
+					data: adresJson,
+					success: function(result,status,xhr){$(".result").append(result + status);},
+					error: function(xhr,textStatus,errorThrown){$(".result").append(xhr.statusText + textStatus + errorThrown);}
+				});
+			}
+			function printKlant(klant){
+				var naam = klant.voornaam +" "+ klant.tussenvoegsel +" "+ klant.achternaam;
+				var adresString = klant.adres.straatnaam +" "+ klant.adres.huisnummer +" "+ klant.adres.toevoeging + "</br>"+ klant.adres.postcode +" "+ klant.adres.woonplaats;
+				return "klantnummer: "+ klant.id +"</br>"+ naam +"</br>"+ adresString +"</br>"+ klant.email +"</br>";
+			}
+		
+			// $(document).ready(function(){
+			// 	$.getJSON("WorkshopPart3/klant/get", function(result){
+			// 		$(".content").append(result);
+			// 	});
+			// });
+			
+		</script>
+	</head>
+
+	<body>
+		<div class="header">Uw gegevens</div>
+
+		<div class="menu">
+			<button>ik ben een nieuwe klant</button>
+			<button>ik ben al bekend bij jullie</button>
+			<button>ik wil inloggen met mijn account</button>
+		</div>
+
+		<div class="content">
+			<div class="account">
+				<form>
+					<table align="center">
+						<tr>
+							<td>loginnaam:</td><td><input type="text" id="login"></td>
+						</tr>
+						<tr>
+							<td>wachtwoord:</td><td><input type="text" id="pass"></td>
+						</tr>
+						<tr>
+							<td colspan="2" align="center"><button onclick="login()">inloggen</button></td>
+						</tr>
+					</table>
+				</form>
+			</div>
+		</div>
+
+		<div class="klantgegevens">
+			<form>
+			 	<table>
+			 		<tr>
+			 			<td>voornaam:</td><td><input type="text" id="voornaam"></td>
+			 		</tr>
+			 		<tr>
+			 			<td>tussenvoegsel:</td><td><input type="text" id="tussenvoegsel"maxlenght="9"></td>
+			 		</tr>
+			 		<tr>
+			 			<td>achternaam:</td><td><input type="text" id="achternaam"></td>
+			 		</tr>
+			 		<tr>
+			 			<td>email:</td><td><input type="text" 
+				 			pattern="[\w]{3,}([\w\.\-](\w){3,})*@[\w]{3,}([\w\.\-][\w^_]+)*(\.([\w^0-9_]){2,4}){1,2}" 
+				 			id="email" required="true">
+				 		</td>
+			 		</tr>
+			 		<tr>
+						<td colspan="2" align="right">
+							<button id="post_klant" onclick="postKlant()">verify</button>
+						</td>
+					</tr>
+				</table>
+			</form>
+			<form>
+				<table>
+					<tr>
+						<td>straatnaam:</td><td><input type="text" id="straatnaam"></td>
+						<td>huisnummer:</td><td><input type="text" id="huisnummer" pattern="[\d]+" maxlenght="4" required="true"></td>
+						<td>toevoeging:</td><td><input type="text" id="toevoeging" maxlength="7"></td>
+					</tr>
+					<tr>
+						<td>postcode:</td>
+						<td><input type="text" id="postcode" pattern="[\d]{4}[A-Z]{2}" size="6" required="true"></td>
+						<td>woonplaats:</td>
+						<td><input type="text" id="woonplaats"></td>
+					</tr>
+					<tr>
+						<td colspan="6" align="right"><button id="post" onclick="postAdres()">verify</button></td>
+					</tr>
+				</table>
+			</form>
+		</div>
+
+		<!-- <div>
+			<table>
+				<tr><td colspan="2" id="view"></td></tr>
+				<tr><td></td><td><button onclick="update()">opslaan</button></td>
+
+			</table>
+		</div>
+ -->
+		<div class="result">resultaat:</div>
+
+	</body>
+</html>
