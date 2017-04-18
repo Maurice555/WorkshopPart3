@@ -3,76 +3,102 @@ package com.workshop3.view;
 import java.util.*;
 
 import javax.enterprise.context.*;
-import javax.faces.bean.ManagedBean;
 import javax.inject.*;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 
 import com.workshop3.model.*;
 import com.workshop3.service.KlantService;
 
-@Named
+@Path("klant")
 @SessionScoped
 public class KlantView implements java.io.Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	@Inject
 	private Klant klant;
 	
-	@Inject
-	private Adres adres;
+//	private Adres adres;
 	
-	@Inject
-	private Account account;
+	private Account account; // = new Account();
 	
 	@Inject
 	private KlantService service;
 
-	public static String result = "InitialValue";
+//	public static String result = "InitialValue";
 	
-	public KlantView() {}
+	public KlantView() { this.klant = new Klant(); }
 	
-	
+	@GET @Path("get")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Klant getKlant() {return this.klant;}
 	
-	public void setKlant(Klant k) {this.klant = k;}
+	@POST @Path("set")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public void setKlant(Klant k) {
+		if (k.getId() > 0) { this.klant = k; } 
+		this.klant.setKlant(k);
+	}
 	
-	public Adres getAdres() {return this.adres;}
+//	@GET @Path("adres/get")
+//	@Produces(MediaType.APPLICATION_JSON)
+//	public Adres getAdres() {return this.adres;}
+//	
+//	@POST @Path("adres/set")
+//	@Consumes(MediaType.APPLICATION_JSON)
+//	public void setAdres(Adres a) {this.adres = a;}
 	
-	public void setAdres(Adres a) {this.adres = a;}
-
+	@GET @Path("account/get")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Account getAccount() {return this.account;}
-
+	
+	@POST @Path("account/set")
+	@Consumes(MediaType.APPLICATION_JSON)
 	public void setAccount(Account act) {this.account = act;}
-
-	public static String getResult() {return result;}
 	
-	
-	private static void setResult(long outcome) {
-		if (outcome <= 0) {
-			switch ((int) outcome) {
-				case -3: result = "InvalidEmail"; break;
-				case -2: result = "TransactionalException"; break;
-				case -1: result = "LoginFailed"; break;
-				case  0: result = "SaveFailed"; break;
-				default: result = "UnknownError"; break;
-			}
-		} else { result = "SUCCESS"; }
+//	@GET @Path("result")
+//	@Produces(MediaType.TEXT_PLAIN)
+//	public static String getResult() {return result;}
+//	
+//	
+//	private static void setResult(long outcome) {
+//		if (outcome <= 0) {
+//			switch ((int) outcome) {
+//				case -3: result = "InvalidEmail"; break;
+//				case -2: result = "TransactionalException"; break;
+//				case -1: result = "LoginFailed"; break;
+//				case  0: result = "SaveFailed"; break;
+//				default: result = "UnknownError"; break;
+//			}
+//		} else { result = "SUCCESS"; }
+//	}
+//	
+	@POST @Path("adres")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.TEXT_PLAIN)
+	public long addAdresToKlant(Adres a) {
+		this.klant.setAdres(this.service.getAdres(this.service.add(new Adres(a))));
+		return addOrUpdate(); //setResult();
 	}
 	
-	
-	public void addAdresToKlant() {
-		this.klant.setAdres(this.service.getAdres(this.service.add(this.adres)));
-		setResult(addOrUpdate());
+	@POST @Path("account")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.TEXT_PLAIN)
+	public long addAccountToKlant(Account act) {
+		Account newAct = new Account(this.klant);
+		newAct.setLogin(act.getLogin());
+		newAct.setPass(act.getPass());
+		this.klant.getAccounts().add(this.service.getSimple(this.service.addSimple(newAct)));
+		setAccount(newAct);
+		return addOrUpdate();
 	}
-		
-	public void addAccountToKlant() {
-		this.klant.getAccounts().add(this.service.getSimple(this.service.addSimple(this.account)));
-		setResult(addOrUpdate());
-	}
 	
-	public void addBezorgAdres() {
-		this.klant.getBezorgAdressen().add(this.service.getAdres(this.service.add(this.adres)));
-		setResult(addOrUpdate());
+	@POST @Path("adres/bezorg")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.TEXT_PLAIN)
+	public long addBezorgAdres(Adres a) {
+		this.klant.getBezorgAdressen().add(this.service.getAdres(this.service.add(new Adres(a))));
+		return addOrUpdate();
 	}
 
 	public long addOrUpdate() {
@@ -88,56 +114,44 @@ public class KlantView implements java.io.Serializable {
 		return -3;
 	}
 	
-	public void updateAccount() {
-		setResult(this.service.updateSimple(this.account));
+	public long updateAccount() {
+		return this.service.updateSimple(this.account);
 	}
 	
+	@GET @Path("login")
+	@Produces(MediaType.TEXT_PLAIN)
 	public long login() {
-		Account acct = this.service.getUniqueSimple(new String[] {this.account.getLogin()});
+		Account acct = this.service.getUniqueSimple(this.account.identifyingProps());
 		if (acct.getPass().equals(this.account.getPass())) {
 			setAccount(acct);
 			setKlant(acct.getKlant());
-			setAdres(acct.getKlant().getAdres());
-			return acct.getId();
+			return acct.getKlant().getId();
 		}
 		return -1;
 	}
 	
-	public String getName() {
-		return this.klant.getVoornaam() + " " + this.klant.getTussenvoegsel() + this.klant.getAchternaam(); 
+	@GET @Path("logout")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String logout(){
+		this.klant = new Klant();
+		this.account = null;
+		return "Logged Out";
 	}
 	
-	public Adres printAdres(int row) {
-		if (row == 0) {
-			return this.klant.getAdres();
-		}
-		return printBezorgAdres(row);			
-	}
-	
-	public Adres printBezorgAdres(int row) {
-		List<Adres> bezorgAdressen = new ArrayList<Adres>(this.klant.getBezorgAdressen()); 
-		try {
-			return bezorgAdressen.get(row - 1);
-		} catch (IndexOutOfBoundsException e) {
-			return null;
-		}
-	}
-	
-	public String getGreeting(){
-		if (this.klant.getVoornaam() != null) return this.klant.getVoornaam();
-		if (this.klant.getAchternaam() == null) return "Meneer/Mevrouw";
-		return "Meneer/Mevrouw " + this.klant.getAchternaam();
-	}
-	
-	public void getNameFromEmail() {
-		String[] name = this.klant.getEmail().substring(0, this.klant.getEmail().indexOf("@"))
-				.split("[\\.\\d-_]");
-		
-		if (name.length > 2) this.klant.setTussenvoegsel((name[1]));
-		if (name.length > 1) this.klant.setVoornaam(name[0]);
-		this.klant.setAchternaam(name[name.length - 1]);
-	}
-	
+//	public List<Adres> printBezorgAdres() {
+//		return new ArrayList<Adres>(this.klant.getBezorgAdressen()); 
+//		
+//	}
+//	
+//	public void getNameFromEmail() {
+//		String[] name = this.klant.getEmail().substring(0, this.klant.getEmail().indexOf("@"))
+//				.split("[\\.\\d-_]");
+//		
+//		if (name.length > 2) this.klant.setTussenvoegsel((name[1]));
+//		if (name.length > 1) this.klant.setVoornaam(name[0]);
+//		this.klant.setAchternaam(name[name.length - 1]);
+//	}
+//	
 
 	public static long getSerialversionuid() {return serialVersionUID;}
 

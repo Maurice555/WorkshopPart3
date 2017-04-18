@@ -7,7 +7,7 @@
 			html, body, div {
 				margin: 0;
 				padding: 0;
-				background-color: #001a0d;
+				/*background-color: #001a0d;*/
 			}
 			.control {
 				position: fixed;
@@ -16,12 +16,12 @@
 				height: 36px;
 				border-top: 3px solid black;
 				background-color: #404040;
-				padding: 2px;
+				padding: 4px;
 				color: orange;
 				font-family: sans-serif;
 				font-style: italic;
 				font-weight: bold;
-				font-size: 18pt;
+				font-size: 16pt;
 				border-bottom: 1px solid white;
 				box-shadow: 0px -3px 8px 4px black;
 			}
@@ -33,8 +33,8 @@
 				background-color: grey;
 			}	
 			.main {
-				padding: 0 0 0 0;
-				margin: 0;
+				/*padding: 0 0 0 0;
+				margin: 0;*/
 				background-color: darkgrey;
 			}
 			.header {
@@ -49,6 +49,18 @@
 				font-style: small-caps;
 				font-weight: bold;
 				color: #3b111f;
+			}
+			.options{
+				float: right;
+				margin-left: 76%;
+				width: 22%;
+				position: absolute;
+				border: 1px solid white;
+				background-color: #404040;
+			}
+			.beheer {
+				background-color: white;
+				color: black;
 			}
 			.bestelling {
 				float: left;
@@ -88,6 +100,9 @@
 				color: white;
 				box-shadow: 1px 1px 5px 0px;
 			}
+			.control table {
+				width: 96%;
+			}
 			.control button {
 				border: 2px solid black;
 				background-color: black;
@@ -101,8 +116,6 @@
 			}
 			.bestelling table {
 				outline-width: 1px;
-			}.bestelling th {
-				border-bottom: 1px solid black;
 			} .bestelling td {
 				text-align: right;
 			} .bestelling td#artikelnaam {
@@ -116,6 +129,18 @@
 			} .bestelling button:active {
 				color: white;
 			}
+			.beheer table {
+				width: 96%;
+				border: 1px solid;
+				border-radius: 4px;
+			}
+			.beheer button {
+				border: 1px solid grey;
+				box-shadow: 0;
+				background-color: white;
+			} .beheer button:hover {
+				background-color: lightgrey;
+			}
 			
 		</style>
 
@@ -123,12 +148,11 @@
 			function saveBestelling(){
 				$.post("WorkshopPart3/bestelling/save", function(id){
 				 	$(".bestelling").append(id);
+				 	// if (document.getElementById("loggedIn") != "login" && document.getElementById("loggedIn") != ""){
+
+				 	// }
 				});
 			}
-			function klantMenu(){
-
-			}
-			
 			function drawBestelling(bestelling){
 				// var tableHeader = '<tr><th colspan="4">Menu</th><th>edit</th></tr>';
 				var bestellijst = getBestellijst(bestelling);
@@ -178,7 +202,12 @@
 				$(".bestelling").hide(250);
 				$.get("klant.html", function(page){
 					$(".klant").html(page);
-				})
+				});
+				$.getJSON("WorkshopPart3/klant/account/get", function(account){
+					if (account.id > 0 && account.klant > 0){
+						$("#loggedIn").html(account.login);
+					}
+				});
 				$.getJSON("WorkshopPart3/bestelling/get", function(result){
 					$(".bestelling").html(drawBestelling(result));
 				});
@@ -189,17 +218,18 @@
 	
 	<body>
 		<div class="control">
-			
 			{ this(
 			<button onclick="$('.bestelling').toggle(240)">Uw Bestelling</button>,
-			<button onclick="$('.klant').toggle(240)">Uw Gegevens</button>
+			<button id="loggedIn" onclick="$('.klant').toggle(240)">Uw Gegevens</button>
 			); }
 
 			<div class="bestelling"></div>
+			
 			<div id="voegartitoe"></div>
 		</div>
 
 		<div class="contain">
+			
 			<div class="klant"></div>
 			
 			<div class="main">
