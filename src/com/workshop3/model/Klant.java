@@ -60,26 +60,20 @@ public class Klant implements EntityIface {
 	@OneToMany(mappedBy = "klant", cascade = CascadeType.MERGE)
 	private Set<Bestelling> bestellingen;
 	
-	public Klant() {}
-	
-	public Klant(String mail){
-		this(null, null, mail);
-	}
-	
-	public Klant(String voor, String achter, String mail){
-		this(voor, null, achter, mail);
-	}
-	
-	public Klant(String voor, String tussen, String achter, String mail){
-		setVoornaam(voor);
-		setTussenvoegsel(tussen);
-		setAchternaam(achter);
-		setEmail(mail);
+	public Klant() {
 		this.bestellingen = new HashSet<Bestelling>();
 		this.accounts = new HashSet<Account>();
 		this.bezorgAdressen = new HashSet<Adres>();
 	}
+		
 	
+	public void setKlant(Klant k){
+		setVoornaam(k.getVoornaam());
+		setTussenvoegsel(k.getTussenvoegsel());
+		setAchternaam(k.getAchternaam());
+		setEmail(k.getEmail());
+	}
+		
 	@Override
 	public long getId() {return this.id;}
 	

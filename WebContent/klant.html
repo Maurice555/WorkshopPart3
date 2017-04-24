@@ -1,18 +1,12 @@
 <html>
 	<head>
 		<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.0.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.js"></script>
+		<script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/additional-methods.min.js"></script>
 		<title>klantformulier</title>
 		<style type="text/css">
 			html, body {
 				margin: 0;
-			}
-			.content {
-
-				background-color: purple;
-				color: lightgrey;
-			}
-			.input {
-				background-color: lightgrey;
 			}
 			.menu {
 				background-color: darkgrey;
@@ -21,6 +15,9 @@
 			.content {
 				background-color: lightgrey;
 				color: #330033;
+			}
+			.input {
+				background-color: lightgrey;
 			}
 			#klantgegevens td {
 				text-align: right;
@@ -51,27 +48,25 @@
 		<script type="text/javascript">
 
 			function createAccount(){
-				if ($("input#pass1").val() == $("input#pass2").val()){
-					var account = {
-						"login": $("input#newLogin").val(),
-						"pass": $("input#pass1").val()
-					};
-					var accountJson = JSON.stringify(account);
-					$.ajax({
-						type: "POST",
-						contentType: "application/json",
-						url: "WorkshopPart3/klant/account",
-						dataType: "json",
-						data: accountJson,
-						success: function(result,status,xhr){
-							$(".result").append(status + "successFunction");
-							$("input#login").val(account.login);
-							$("input#pass").val(account.pass);
-							login();
-						},
-						error: function(xhr,textStatus,errorThrown){$(".result").append(textStatus);}
-					});
-				} else { $(".result").append("Wachtwoord niet correct herhaald.. probeer het nogmaals"); }	
+				var account = {
+					"login": $("input#newLogin").val(),
+					"pass": $("input#pass1").val()
+				};
+				var accountJson = JSON.stringify(account);
+				$.ajax({
+					type: "POST",
+					contentType: "application/json",
+					url: "WorkshopPart3/klant/account",
+					dataType: "json",
+					data: accountJson,
+					success: function(result,status,xhr){
+						$(".result").append(status + result);
+						$("input#login").val(account.login);
+						$("input#pass").val(account.pass);
+						login();
+					},
+					error: function(xhr,textStatus,errorThrown){$(".result").append(textStatus);}
+				});
 			}
 
 			function login() {
@@ -121,7 +116,7 @@
 						$("#adresinput").show(144);
 					},
 					error: function(xhr,textStatus,errorThrown){ $(".result").append(xhr.statusText + textStatus + errorThrown); }
-				});
+				});				
 			}
 			function postAdres(){
 				var adres = {
@@ -143,9 +138,67 @@
 						$.getJSON("WorkshopPart3/service/klant/Id="+ result, function(klant){
 							$(".content").append(printKlant(klant));
 						});
-						$("#newAccount").show(144);
 					},
 					error: function(xhr,textStatus,errorThrown){ $(".result").append(xhr.statusText + textStatus + errorThrown); }
+				});
+			}
+			function bezorgAdres(){
+				$("#bezorging").attr("name", "bezorg");
+				$(".result").append($("#bezorging").attr("name"));
+				$("#adresinput").show(96);
+			}
+			function postBezorgAdres(){
+				var adres = {
+					"straatnaam": $("input#straatnaam").val(),
+					"huisnummer": $("input#huisnummer").val(),
+					"toevoeging": $("input#toevoeging").val(),
+					"postcode": $("input#postcode").val(),
+					"woonplaats": $("input#woonplaats").val()
+				};
+				var adresJson = JSON.stringify(adres);
+				$.ajax({
+					type: "POST",
+					contentType: "application/json",
+					url: "WorkshopPart3/klant/adres/bezorg",
+					dataType: "json",
+					data: adresJson,
+					success: function(result,status,xhr){
+						$(".result").append(xhr.statusText + status);
+						$.getJSON("WorkshopPart3/service/klant/Id="+ result, function(klant){
+							$.each(klant.bezorgAdressen, function(i, adres){
+								$(".content").append(printAdres(adres));
+							});
+						});
+					},
+					error: function(xhr,textStatus,errorThrown){ $(".result").append(xhr.statusText + textStatus + errorThrown); },
+					complete: function(){
+						$("#bezorging").attr("name", "norm"); // reset adresinput Button
+						$("#adresinput").hide(288);
+					}
+				});
+			}
+			function updateKlantForm(){
+				$.getJSON("WorkshopPart3/klant/get", function(klant){
+					$("input#voornaam").val(klant.voornaam);
+					$("input#tussenvoegsel").val(klant.tussenvoegsel);
+					$("input#achternaam").val(klant.achternaam);
+					$("input#email").val(klant.email);
+					$("input#straatnaam").val(klant.adres.straatnaam);
+					$("input#huisnummer").val(klant.adres.huisnummer);
+					$("input#toevoeging").val(klant.adres.toevoeging);
+					$("input#postcode").val(klant.adres.postcode);
+					$("input#woonplaats").val(klant.adres.woonplaats);
+				});
+				$("#submitklant").attr("value", "update");
+				$("#naaminput").show();
+				$("#adresinput").show();
+			}
+			function updateKlant(){
+				postKlant();
+				$.get("WorkshopPart3/klant/update", function(result){
+					$.getJSON("WorkshopPart3/service/klant/Id="+ result, function(fromDB){
+						$(".content").html(printKlant(fromDB));
+					});
 				});
 			}
 			function printKlant(klant){
@@ -168,9 +221,41 @@
 			}
 			function logout(){
 				$.get("WorkshopPart3/klant/logout", function(result){
-					$
-				})
+					$(".content").html(result);
+					$.get("WorkshopPart3/bestelling/logout", function(string){
+						$(".content").append(string);
+					});
+					window.location.assign("index.html");
+				});
 			}
+			$("#naaminput").submit(function(event){
+				event.preventDefault();
+				var form = $("#naaminput");
+				form.validate();
+				if (form.valid()){
+					if ($("#submitklant").attr("value") == "verify"){ postKlant(); }
+					if ($("#submitklant").attr("value") == "update"){ updateKlant(); }
+				} else { $(".result").append("Vul een geldig email-adres in alstublieft"); }
+			});
+			$("#adresinput").submit(function(e){
+				e.preventDefault();
+				var adresform = $("#adresinput");
+				adresform.validate();
+				if (adresform.valid()){
+					if ($("#bezorging").attr("name") == "norm"){
+						postAdres();
+						if ($(".content").attr("id") == 0){
+							$("#newAccount").show(144);
+						}
+					}
+					if ($("#bezorging").attr("name") == "bezorg"){ postBezorgAdres(); }
+				}
+				else { $(".result").append("De invoer voldoet niet aan de vereisten"); }
+			});
+			$("#newAccount").submit(function(creAct){
+				if ($("input#pass1").val() == $("input#pass2").val()){ createAccount();	}
+				else { $(".result").append("Wachtwoord niet correct herhaald.. probeer het nogmaals"); }
+			});
 			$(document).ready(function(){
 				$("#newAccount").hide(50);
 				$("#adresinput").hide(50);
@@ -178,6 +263,7 @@
 				$(".menu").hide();
 				$.getJSON("WorkshopPart3/klant/account/get", function(account){
 					if (account.id > 0 && account.klant > 0) {
+						$(".content").attr("id", account.id);
 						$("#account").hide();
 						$(".menu").show();
 						$.getJSON("WorkshopPart3/service/klant/Id="+ account.klant, function(klant){
@@ -186,81 +272,73 @@
 					}
 				});
 			});
-		
+			
 		</script>
 	</head>
 
 	<body>
-		<div class="header">Uw gegevens</div>
-
 		<div class="menu">
-			<button>gegevens bewerken</button>
+			<button onclick="updateKlantForm()">gegevens bewerken</button>
 			<button onclick="bestellingBeheer()">mijn bestellingoverzicht</button>
+			<button onclick="bezorgAdres()">bezorging</button>
 			<button onclick="logout()">uitloggen</button>
 		</div>
 
-		<div class="content"></div>
+		<div class="header">Uw gegevens</div>
+
+		<div class="content" id="0"></div>
 
 		<div class="input">
 
 			<div id="account">
-			
-				<table align="center">
-					<tr><td>loginnaam:</td><td><input type="text" id="login"></td></tr>
-					<tr><td>wachtwoord:</td><td><input type="text" id="pass"></td></tr>
-					<tr><td colspan="2" align="center"><button onclick="login()">inloggen</button></td></tr>
-					<tr><td colspan="2" align="center"><button onclick="$('#naaminput').toggle(144)">ik ben een nieuwe klant</button></td></tr>
-				</table>
-			
+				<!-- <form id="accountinput"> -->
+					<table align="center">
+						<tr><td>loginnaam:</td><td><input type="text" id="login"></td></tr>
+						<tr><td>wachtwoord:</td><td><input type="text" id="pass"></td></tr>
+						<tr><td colspan="2" align="center"><button onclick="login()">inloggen</button></td></tr>
+						<tr><td colspan="2" align="center"><button onclick="$('#naaminput').toggle(144)">ik ben een nieuwe klant</button></td></tr>
+					</table>
+				<!-- </form> -->
 			</div>
 
 			<div id="klantgegevens">
-			 	<table id="naaminput">
-			 		<tr>
-			 			<td>voornaam:</td><td><input type="text" id="voornaam"></td>
-			 		</tr>
-			 		<tr>
-			 			<td>tussenvoegsel:</td><td><input type="text" id="tussenvoegsel"maxlenght="9"></td>
-			 		</tr>
-			 		<tr>
-			 			<td>achternaam:</td><td><input type="text" id="achternaam"></td>
-			 		</tr>
-			 		<tr>
-			 			<td>email:</td><td><input type="text" 
-				 			pattern="[\w]{3,}([\w\.\-](\w){3,})*@[\w]{3,}([\w\.\-][\w^_]+)*(\.([\w^0-9_]){2,4}){1,2}" 
-				 			id="email" required="true">
-				 		</td>
-			 		</tr>
-			 		<tr>
-						<td colspan="2" align="right"><button onclick="postKlant()">verify</button></td>
-					</tr>
-				</table>
-		
-				<table id="adresinput">
-					<tr>
-						<td>straatnaam:<input type="text" id="straatnaam"></td>
-						<td>huisnummer:<input type="text" id="huisnummer" pattern="[\d]+" maxlenght="4" required="true"></td>
-						<td>toevoeging:<input type="text" id="toevoeging" maxlength="7"></td>
-					</tr>
-					<tr>
-						<td>postcode:<input type="text" id="postcode" pattern="[\d]{4}[A-Z]{2}" size="6" required="true"></td><td>woonplaats:<input type="text" id="woonplaats"></td>
-					</tr>
-					<tr>
-						<td align="right"><button onclick="postAdres()">verify</button></td>
-					</tr>
-				</table>
+				<form id="naaminput">
+				 	<table align="center">
+				 		<tr><td>voornaam:</td><td><input type="text" id="voornaam"></td></tr>
+				 		<tr><td>tussenvoegsel:</td><td><input type="text" id="tussenvoegsel" maxlength="9"></td></tr>
+				 		<tr><td>achternaam:</td><td><input type="text" id="achternaam"></td></tr>
+				 		<tr><td>email:</td><td><input type="text" 
+					 			pattern="[\w]{3,}([\w\.\-](\w){3,})*@[\w]{3,}([\w\.\-][\w^_]+)*(\.([\w^0-9_]){2,4}){1,2}" 
+					 			id="email" required></td></tr>
+				 		<tr><td colspan="2" align="right"><input id="submitklant" type="submit" value="verify"></td></tr>
+					</table>
+				</form>
+				<form id="adresinput">
+					<table align="center">
+						<tr>
+							<td>straatnaam:<input type="text" id="straatnaam"></td>
+							<td>huisnummer:<input type="text" id="huisnummer" pattern="[\d]+" maxlenght="4" required></td>
+							<td>toevoeging:<input type="text" id="toevoeging" maxlength="7"></td>
+						</tr>
+						<tr>
+							<td>postcode:<input type="text" id="postcode" pattern="[\d]{4}[A-Z]{2}" size="6" required></td>
+							<td>woonplaats:<input type="text" id="woonplaats"></td>
+						</tr>
+						<tr>
+							<td colspan="2"><input id="bezorging" name="norm" type="submit" value="update"></td>
+						</tr>
+					</table>
+				</form>
 				
-				<table id="newAccount" align="center">
-					<caption>Als u een account aanmaakt kunnen wij u beter van dienst zijn!</caption>
-					<tr><td>loginnaam:</td><td><input type="text" id="newLogin" required="true" minlength="5"></td></tr>
-					<tr><td>wachtwoord:</td><td><input type="text" id="pass1" required="true" minlength="8"></td></tr>
-					<tr><td>herhaal wachtwoord:</td><td><input type="text" id="pass2" required="true"></td></tr>
-					<tr>
-						<td colspan="2" align="center">
-							<button onclick="createAccount()" action="refresh">aanmaken</button>
-						</td>
-					</tr>
-				</table>	
+				<form id="newAccount">
+					<table align="center">
+						<caption>Als u een account aanmaakt kunnen wij u beter van dienst zijn!</caption>
+						<tr><td>loginnaam:</td><td><input type="text" id="newLogin" required="true" minlength="5"></td></tr>
+						<tr><td>wachtwoord:</td><td><input type="text" id="pass1" required="true" minlength="8"></td></tr>
+						<tr><td>herhaal wachtwoord:</td><td><input type="text" id="pass2" required></td></tr>
+						<tr><td colspan="2" align="center"><input type="submit" value="aanmaken"></td></tr>
+					</table>
+				</form>	
 			
 			</div>
 		</div>

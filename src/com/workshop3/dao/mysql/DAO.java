@@ -45,10 +45,6 @@ public abstract class DAO<E extends Serializable> implements DAOIface<E> {
 	public E get(long id) {
 		return this.em.find(this.entity, id);	
 	}
-//	//default behaviour for returning single result.. in this case with long id.. meant for overriding
-//	public E getUnique(String[] uniqueValues) {
-//		return get(Long.parseLong(uniqueValues[0]));
-//	}
 	
 	@Override
 	public E getUnique(Map<String, String> identifyingProps) {

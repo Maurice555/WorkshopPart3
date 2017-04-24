@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.0.min.js"></script>
+	<style type="text/css">
+		.mijnbestellingen {
+			font-family: serif;
+		}
+		.nav {
+			background-color: lightgrey;
+			color: orange;
+		}
+		tr {
+			border-bottom: 1px solid;
+		} tr:hover {
+			background-color: lightgrey;
+		}
+		td {
+			margin: 0;
+			padding: 0px 3px;
+			border-collapse: collapse;
+		}
+		
+	</style>
+	<script type="text/javascript">
+		function drawBestelling(bestelling, status){
+			var newCell = "</td><td>";
+			return '<tr id="'+ bestelling.id +'"><td>'+ bestelling.id + newCell + bestelling.datum + newCell + status +'</td></tr>';
+		}
+		// <button onclick="$("#arti'+ bestelling.id +'").css("display:", "block")">artikelen</button>
+		function drawBestellijst(bestelling){
+			var table = '<table id="arti'+ bestelling.id +'">';
+			var totaalPrijs = 0;
+			var bestellijst = getBestellijst(bestelling);
+			for (var i = 0; i < bestellijst.length; i++){
+				table += drawArtikelAantal(bestellijst[i]);
+				totaalPrijs += bestellijst[i].aantalMaalPrijs();
+			}
+			return table +'<tr><td colspan="4">&euro; '+ totaalPrijs.toFixed(2) +'</td></tr></table>';
+		}
+		function drawArtikelAantal(artikelAantal){
+			var newCell = '</td><td>';
+			return '<tr><td>'+ artikelAantal.id + newCell + artikelAantal.naam + newCell + artikelAantal.omschrijving + newCell + '&euro; '+artikelAantal.prijs.toFixed(2) + newCell + artikelAantal.aantal +'</td></tr>';
+		}
+		function ArtikelAantal(id, naam, omschrijving, prijs, aantal){
+			this.id = id;
+			this.naam = naam;
+			this.omschrijving = omschrijving;
+			this.prijs = prijs;
+			this.aantal = aantal;
+			this.aantalMaalPrijs = function(){ return this.prijs * this.aantal; }
+		}
+		
+		function getBestellijst(bestelling){
+			var bestellijst = [];
+			var entries = bestelling.artikelen.entry;
+			for (var i = 0; i < entries.length; i++){
+				var artikelAantal = new ArtikelAantal(
+					entries[i]["key"]["id"], 
+					entries[i]["key"]["naam"], 
+					entries[i]["key"]["omschrijving"], 
+					entries[i]["key"]["prijs"], 
+					entries[i]["value"]
+				);
+				bestellijst.push(artikelAantal);	
+			}
+			return bestellijst;
+		}
+
+		$(document).ready(function(){
+			$.getJSON("WorkshopPart3/klant/account/get", function(account){
+				$.getJSON("WorkshopPart3/service/bestelling/zoek/klantId="+ account.klant, function(result){
+					$.each(result, function(index, bestelling){
+						$("#detail").append(drawBestellijst(bestelling));
+						$.get("WorkshopPart3/service/bestelling/status/Id="+ bestelling.id, function(status){
+							$("#select table").append(drawBestelling(bestelling, status));
+						});
+					});
+				});
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<div class="header">Uw Bestellingen</div>
+	<div class="mijnbestellingen">
+		<div id="select"><table></table></div>
+		<div id=detail></div>
+	</div>
+
+</body>
+</html>

@@ -27,7 +27,7 @@ public class Bestelling implements EntityIface {
 	private long id;
 	
 	@XmlIDREF
-	@ManyToOne(cascade = CascadeType.MERGE)
+	@ManyToOne(cascade = CascadeType.REFRESH)
 	@JoinColumn(name = "klantId", referencedColumnName = "id")
 	private Klant klant;
 	
@@ -36,7 +36,6 @@ public class Bestelling implements EntityIface {
 	@Column(name = "datum")
 	private Date datum;
 	
-	@XmlElementWrapper(name = "status")
 	@ElementCollection
 	@CollectionTable(name = "bestellingHasStatus",
 			joinColumns = @JoinColumn(name = "bestellingId"))
@@ -44,7 +43,6 @@ public class Bestelling implements EntityIface {
 	@MapKeyColumn(name = "status")
 	private Map<Integer, Date> stati;
 	
-	@XmlElementWrapper(name = "artikelen")
 	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(name = "bestellingHasArtikel",
 			joinColumns = @JoinColumn(name = "bestellingId"))
@@ -53,15 +51,10 @@ public class Bestelling implements EntityIface {
 	private Map<Artikel, Integer> artikelen;
 	
 	public Bestelling() {
-		this(null);
-	}
-	
-	public Bestelling(Klant k) {
-		this.klant = k;
 		this.stati = new HashMap<Integer, Date>();
 		this.artikelen = new HashMap<Artikel, Integer>();
 	}
-
+	
 	
 	@Override
 	public long getId() {return this.id;}
@@ -127,6 +120,8 @@ public class Bestelling implements EntityIface {
 		return (int) this.id;
 	}
 
+	
+	
 	public static long getSerialversionuid() {return serialVersionUID;}
 
 	

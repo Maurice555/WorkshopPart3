@@ -43,14 +43,13 @@ public class Account implements EntityIface {
 	@Column(name = "password")
 	private String pass;
 	
-	public Account() { this(null); }
+	public Account() {}
 	
 	public Account(Klant klant) {
 		this.klant = klant;
 		this.datum = new Date();
 	}
 	
-
 	@Override
 	public long getId() {return this.id;}
 

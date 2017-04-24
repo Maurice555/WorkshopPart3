@@ -23,18 +23,17 @@
 				font-weight: bold;
 				font-size: 16pt;
 				border-bottom: 1px solid white;
-				box-shadow: 0px -3px 8px 4px black;
+				box-shadow: 0px -4px 8px 4px black;
 			}
 			.contain {
 				margin: auto;
 				display: block;
-				padding: 40px 0px 32px 0px;
+				padding: 44px 0px 36px 0px;
 				content: "";
 				background-color: grey;
 			}	
 			.main {
-				/*padding: 0 0 0 0;
-				margin: 0;*/
+				padding: 0;
 				background-color: darkgrey;
 			}
 			.header {
@@ -50,14 +49,14 @@
 				font-weight: bold;
 				color: #3b111f;
 			}
-			.options{
+			/*.options{
 				float: right;
 				margin-left: 76%;
 				width: 22%;
 				position: absolute;
 				border: 1px solid white;
 				background-color: #404040;
-			}
+			}*/
 			.beheer {
 				background-color: white;
 				color: black;
@@ -66,6 +65,7 @@
 				float: left;
 				position: absolute;
 				width: 320px;
+				display: table;
 				background-color: white;
 				color: black;
 				font: 12pt arial;
@@ -146,53 +146,17 @@
 
 		<script type="text/javascript">
 			function saveBestelling(){
-				$.post("WorkshopPart3/bestelling/save", function(id){
-				 	$(".bestelling").append(id);
-				 	// if (document.getElementById("loggedIn") != "login" && document.getElementById("loggedIn") != ""){
-
-				 	// }
+				var klantID = $("#customER").attr("name");
+				if (klantID > 0){
+					$.getJSON("WorkshopPart3/bestelling/klantId="+ klantID, function(bestelling){
+						$(".content").append("bestelling.klant: "+ bestelling.klant);
+					});
+				}		
+				$.post("WorkshopPart3/bestelling/save", function(bestelID){
+				 	$(".bestelling").append(bestelID);
 				});
 			}
-			function drawBestelling(bestelling){
-				// var tableHeader = '<tr><th colspan="4">Menu</th><th>edit</th></tr>';
-				var bestellijst = getBestellijst(bestelling);
-				var bestelTabel = "";
-				var totaalPrijs = 0;
-				for (var i = 0; i < bestellijst.length; i++){
-				 	bestelTabel += '<tr>'+ drawArtikelAantal(bestellijst[i]) +'</tr>';
-				 	totaalPrijs += bestellijst[i].aantalMaalPrijs();
-				}
-				return '<table align="center">'+ bestelTabel +'<tr><td colspan ="4" align="right" style="border-top:1px solid;">totaal: &euro; '+ totaalPrijs.toFixed(2) +'</td><td><button onclick="saveBestelling()">opslaan</button></td></tr></table>';
-			}
-			function drawArtikelAantal(artikelAantal){
-				var newCell = '</td><td>';
-				return '<td>'+ artikelAantal.id +'</td><td id="artikelnaam">'+ artikelAantal.naam + newCell + '&euro; '+artikelAantal.prijs.toFixed(2) + newCell + artikelAantal.aantal + newCell +'<button onclick="removeArtikel('+ artikelAantal.id +')">-</button></td>';
-			}
-			function ArtikelAantal(id, naam, omschrijving, prijs, aantal){
-				this.id = id;
-				this.naam = naam;
-				this.omschrijving = omschrijving;
-				this.prijs = prijs;
-				this.aantal = aantal;
-				this.aantalMaalPrijs = function(){ return this.prijs * this.aantal; }
-			}
 			
-			function getBestellijst(bestelling){
-				var bestellijst = [];
-				var entries = bestelling.artikelen.entry;
-				for (var i = 0; i < entries.length; i++){
-					var artikelAantal = new ArtikelAantal(
-						entries[i]["key"]["id"], 
-						entries[i]["key"]["naam"], 
-						entries[i]["key"]["omschrijving"], 
-						entries[i]["key"]["prijs"], 
-						entries[i]["value"]
-					);
-					bestellijst.push(artikelAantal);	
-				}
-				return bestellijst;
-			}
-
 			$(document).ready(function(){
 				$("#voegartitoe").hide();
 				$(".klant").hide();
@@ -205,11 +169,9 @@
 				});
 				$.getJSON("WorkshopPart3/klant/account/get", function(account){
 					if (account.id > 0 && account.klant > 0){
-						$("#loggedIn").html(account.login);
+						$("#customER").html(account.login);
+						$("#customER").attr("name", account.klant);
 					}
-				});
-				$.getJSON("WorkshopPart3/bestelling/get", function(result){
-					$(".bestelling").html(drawBestelling(result));
 				});
 			});
 
@@ -220,7 +182,7 @@
 		<div class="control">
 			{ this(
 			<button onclick="$('.bestelling').toggle(240)">Uw Bestelling</button>,
-			<button id="loggedIn" onclick="$('.klant').toggle(240)">Uw Gegevens</button>
+			<button id="customER" name="0" onclick="$('.klant').toggle(240)">Uw Gegevens</button>
 			); }
 
 			<div class="bestelling"></div>

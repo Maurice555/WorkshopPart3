@@ -60,7 +60,7 @@ public class BestellingService extends DualEntityService<Bestelling, Artikel> {
 		return get(id).getKlant().getId();
 	}
 	
-	@PUT @Path("update/" + ID + "&status={status : [\\d]{1}") // 405 Method Not Allowed
+	@PUT @Path("update/" + ID + "&status={status : [\\d]{1}}") // 405 Method Not Allowed
 	public void statusUpdate(@PathParam("id") long id, @PathParam("status") int status) {
 		Bestelling b = get(id);
 		b.updateStatus(status);

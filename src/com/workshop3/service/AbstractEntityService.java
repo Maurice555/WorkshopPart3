@@ -50,7 +50,10 @@ public abstract class AbstractEntityService<E extends EntityIface> implements ja
 	
 	protected static final int txExc = -2;
 	protected static final int saveExc = 0;
-		
+	
+//	@POST @Path("add")
+//	@Consumes(MediaType.APPLICATION_JSON)
+//	@Produces(MediaType.TEXT_PLAIN)
 	public long add(E e) {
 		try {
 			this.entityDAO.save(e);
@@ -123,8 +126,8 @@ public abstract class AbstractEntityService<E extends EntityIface> implements ja
 			for (Map.Entry<String, String> entry : paramValues.entrySet()) {
 				String param = entry.getKey(), value = entry.getValue();
 				
-				if (value.matches("(P|p)([\\d]+[YMWD]{1})+")) {
-					queryProps.put("period20", Period.parse(value));
+				if (value.matches("(P|p)([\\d]+[YyMmWwDd]{1})+")) {
+					queryProps.put("period20", Period.parse(value.toUpperCase()));
 				} else if (value.matches("[\\d]{4}-[\\d]{2}-[\\d]{2}")) {
 					LocalDate d = LocalDate.parse(value);
 					if (param.matches("(van(af)?|begin|from).*")) { queryProps.put(BEGIN, d); } 

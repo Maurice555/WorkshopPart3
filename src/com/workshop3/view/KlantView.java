@@ -1,7 +1,5 @@
 package com.workshop3.view;
 
-import java.util.*;
-
 import javax.enterprise.context.*;
 import javax.inject.*;
 import javax.ws.rs.*;
@@ -18,15 +16,11 @@ public class KlantView implements java.io.Serializable {
 	
 	private Klant klant;
 	
-//	private Adres adres;
-	
 	private Account account; // = new Account();
 	
 	@Inject
 	private KlantService service;
 
-//	public static String result = "InitialValue";
-	
 	public KlantView() { this.klant = new Klant(); }
 	
 	@GET @Path("get")
@@ -37,18 +31,10 @@ public class KlantView implements java.io.Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public void setKlant(Klant k) {
 		if (k.getId() > 0) { this.klant = k; } 
-		this.klant.setKlant(k);
+		else { this.klant.setKlant(k); }
 	}
 	
-//	@GET @Path("adres/get")
-//	@Produces(MediaType.APPLICATION_JSON)
-//	public Adres getAdres() {return this.adres;}
-//	
-//	@POST @Path("adres/set")
-//	@Consumes(MediaType.APPLICATION_JSON)
-//	public void setAdres(Adres a) {this.adres = a;}
-	
-	@GET @Path("account/get")
+	@GET @Path("account/get") // testfase
 	@Produces(MediaType.APPLICATION_JSON)
 	public Account getAccount() {return this.account;}
 	
@@ -56,23 +42,6 @@ public class KlantView implements java.io.Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public void setAccount(Account act) {this.account = act;}
 	
-//	@GET @Path("result")
-//	@Produces(MediaType.TEXT_PLAIN)
-//	public static String getResult() {return result;}
-//	
-//	
-//	private static void setResult(long outcome) {
-//		if (outcome <= 0) {
-//			switch ((int) outcome) {
-//				case -3: result = "InvalidEmail"; break;
-//				case -2: result = "TransactionalException"; break;
-//				case -1: result = "LoginFailed"; break;
-//				case  0: result = "SaveFailed"; break;
-//				default: result = "UnknownError"; break;
-//			}
-//		} else { result = "SUCCESS"; }
-//	}
-//	
 	@POST @Path("adres")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.TEXT_PLAIN)
@@ -88,7 +57,8 @@ public class KlantView implements java.io.Serializable {
 		Account newAct = new Account(this.klant);
 		newAct.setLogin(act.getLogin());
 		newAct.setPass(act.getPass());
-		this.klant.getAccounts().add(this.service.getSimple(this.service.addSimple(newAct)));
+		// this.klant.getAccounts().add(this.service.getSimple());
+		this.service.addSimple(newAct);
 		setAccount(newAct);
 		return addOrUpdate();
 	}
@@ -138,21 +108,8 @@ public class KlantView implements java.io.Serializable {
 		return "Logged Out";
 	}
 	
-//	public List<Adres> printBezorgAdres() {
-//		return new ArrayList<Adres>(this.klant.getBezorgAdressen()); 
-//		
-//	}
-//	
-//	public void getNameFromEmail() {
-//		String[] name = this.klant.getEmail().substring(0, this.klant.getEmail().indexOf("@"))
-//				.split("[\\.\\d-_]");
-//		
-//		if (name.length > 2) this.klant.setTussenvoegsel((name[1]));
-//		if (name.length > 1) this.klant.setVoornaam(name[0]);
-//		this.klant.setAchternaam(name[name.length - 1]);
-//	}
-//	
 
+	
 	public static long getSerialversionuid() {return serialVersionUID;}
 
 	

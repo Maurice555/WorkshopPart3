@@ -62,6 +62,10 @@ public class Adres implements EntityIface {
 	
 	public Adres() {}
 	
+	public Adres(String postcode, int nummer){
+		this(null, nummer, postcode, null);
+	}
+	
 	public Adres(String straat, int nummer, String postcode, String plaats) {
 		this(straat, nummer, null, postcode, plaats);
 	}
@@ -74,6 +78,11 @@ public class Adres implements EntityIface {
 		setWoonplaats(plaats);
 	}
 	
+	public Adres(Adres a) {
+		this(a.getStraatnaam(), a.getHuisnummer(), a.getToevoeging(), 
+				a.getPostcode(), a.getWoonplaats());
+	}
+
 	@Override
 	public long getId() {return this.id;}
 	
@@ -90,7 +99,9 @@ public class Adres implements EntityIface {
 	
 	public String getToevoeging() {return this.toevoeging != null ? this.toevoeging : "";}
 	
-	public void setToevoeging(String toevoeging) {this.toevoeging = toevoeging != null ? trimUpCase(toevoeging) : "";}
+	public void setToevoeging(String toevoeging) {
+		this.toevoeging = toevoeging != null ? trimUpCase(toevoeging).toLowerCase() : "";
+	}
 	
 	public String getPostcode() {return this.postcode;}
 	

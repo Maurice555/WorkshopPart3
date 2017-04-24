@@ -28,7 +28,11 @@ public class KlantService extends DualEntityService<Klant, Account> {
 
 	
 	public static String firstCapital(String str){
-		return str.trim().replace(str.substring(0, 1), str.substring(0, 1).toUpperCase());
+		try {
+			return str.trim().replace(str.substring(0, 1), str.substring(0, 1).toUpperCase());
+		} catch (StringIndexOutOfBoundsException strexc) {
+			return null;
+		}
 	}
 	
 	public static String trimUpCase(String str) {
@@ -79,6 +83,9 @@ public class KlantService extends DualEntityService<Klant, Account> {
 	}
 	
 // Adres methoden
+	@POST @Path("adres/add")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.TEXT_PLAIN)
 	public long add(Adres adres) {
 		try {
 			this.adresDAO.save(adres);
@@ -118,6 +125,7 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return null;
 	}
 	
+// Extraas	
 // Accountbeheer <Simple>
 	@GET @Path("simple/klant" + ID)
 	@Produces(MediaType.APPLICATION_JSON)
@@ -125,7 +133,6 @@ public class KlantService extends DualEntityService<Klant, Account> {
 		return get(id).getAccounts();
 	}
 
-// Extraas	
 	private static final String ZoekAdres = "zoek/adres/";
 	private static final String AND = "&";
 	private static final String MetPostcode = "postcode={postcode}";
